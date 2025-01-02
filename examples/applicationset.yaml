@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: testing
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - plugin:
+        configMapRef:
+          name: plugin-argocd-substitute-plugin
+        input:
+          parameters:
+            kind: "ConfigMap"
+            name: "cluster-vars"
+            namespace: "default"
+
+        # When using a Plugin generator, the ApplicationSet controller polls every `requeueAfterSeconds` interval (defaulting to every 30 minutes) to detect changes.
+        requeueAfterSeconds: 30
+  template:
+    metadata:
+      name: 'pod-info'
+    spec:
+      project: default
+      sources:
+      - repoURL: https://stefanprodan.github.io/podinfo
+        chart: podinfo
+        targetRevision: 6.7.1
+        helm:
+          releaseName: podinfo
+          valuesObject:
+            something: "{{ .MACHINE_ARN }}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: testing

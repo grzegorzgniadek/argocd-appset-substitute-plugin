@@ -1,5 +1,5 @@
 replicas: 1
-port: 4444
+port: "4444"
 containerSecurityContext:
   allowPrivilegeEscalation: false
   capabilities:
@@ -7,7 +7,7 @@ containerSecurityContext:
       - ALL
 image:
   repository: ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin
-  tag: 0.2.1-rc
+  tag: 0.2.2-rc
 imagePullPolicy: Always
 resources:
   limits:

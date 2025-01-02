@@ -65,10 +65,17 @@ func HandleGetParams(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Transform the data into the required structure
+	parameters := []map[string]string{}
+	dynamicParams := make(map[string]string)
+	for key, value := range data {
+		dynamicParams[key] = value
+	}
+	parameters = append(parameters, dynamicParams)
 	// Build the response
 	response := map[string]interface{}{
 		"output": map[string]interface{}{
-			"parameters": data,
+			"parameters": parameters,
 		},
 	}
 

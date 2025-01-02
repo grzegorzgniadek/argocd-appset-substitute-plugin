@@ -5,6 +5,6 @@ metadata:
   labels:
   {{- include "argocd-appset-substitute-plugin.labels" . | nindent 4 }}
 data:
-  token: "$plugin.plugin.token" # Alternatively $<some_K8S_secret>:plugin.myplugin.token
+  token: "$plugin-argocd-substitute-plugin.token" # Alternatively $<some_K8S_secret>:plugin.myplugin.token
   baseUrl: "http://{{ include "argocd-appset-substitute-plugin.fullname" . }}.{{ .Release.Namespace }}.svc"
   requestTimeout: "60"
