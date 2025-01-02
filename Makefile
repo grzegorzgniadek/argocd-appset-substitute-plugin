@@ -46,12 +46,10 @@ help: ## Display this help.
 
 ##@ Development
 
-.PHONY: generate
+.PHONY: helm-generate
 helm-generate:
 	TAG=$(TAG) yq -i '.appVersion = strenv(TAG)' charts/argocd-appset-substitute-plugin/Chart.yaml
-
-.PHONY: release
-release:  manifests generate kustomize-generate helm-generate helm
+	TAG=$(TAG) yq -i '.version = strenv(TAG)' charts/argocd-appset-substitute-plugin/Chart.yaml
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -111,12 +109,6 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f Dockerfile.cross .
 	- $(CONTAINER_TOOL) buildx rm argocd-appset-substitute-plugin-builder
 	rm Dockerfile.cross
-
-.PHONY: build-installer
-build-installer: manifests generate kustomize ## Generate a consolidated YAML with CRDs and deployment.
-	mkdir -p dist
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default > dist/install.yaml
 
 ##@ Deployment
 
