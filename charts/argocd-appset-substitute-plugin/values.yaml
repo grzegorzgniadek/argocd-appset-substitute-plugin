@@ -4,10 +4,10 @@ containerSecurityContext:
   allowPrivilegeEscalation: false
   capabilities:
     drop:
-    - ALL
+      - ALL
 image:
   repository: ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin
-  tag: 0.1.0
+  tag: 0.2.1-rc
 imagePullPolicy: Always
 resources:
   limits:

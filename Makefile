@@ -46,10 +46,11 @@ help: ## Display this help.
 
 ##@ Development
 
-.PHONY: helm-generate
-helm-generate:
+.PHONY: helm-replace
+helm-replace: ## Replace Version Tag with helm charts values
 	TAG=$(TAG) yq -i '.appVersion = strenv(TAG)' charts/argocd-appset-substitute-plugin/Chart.yaml
 	TAG=$(TAG) yq -i '.version = strenv(TAG)' charts/argocd-appset-substitute-plugin/Chart.yaml
+	TAG=$(TAG) yq -i '.image.tag = strenv(TAG)' charts/argocd-appset-substitute-plugin/values.yaml
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -62,35 +63,30 @@ vet: ## Run go vet against code.
 ##@ Build
 
 .PHONY: build
-build: fmt vet ## Build manager binary.
+build: fmt vet ## Build plugin binary.
 	go build -o bin/plugin ./cmd/main.go
 
 .PHONY: run
-run: fmt vet ## Run a controller from your host.
+run: fmt vet ## Run a plugin from your host.
 	go run ./cmd/main.go
 
 HELMDOCS ?= $(LOCALBIN)/helm-docs
 
 # Create Helm-docs in charts directory
-.PHONY: helm-docs
-helm-docs-install: $(HELMDOCS)
-$(HELMDOCS): $(LOCALBIN) ## Download helm-docs locally if necessary.
-	test -s $(LOCALBIN)/helm-docs || GOBIN=$(LOCALBIN) go install github.com/norwoodj/helm-docs/cmd/helm-docs@latest
-
-helm-docs: helm-docs-install 
+helm-docs: helm-docs-install ## Use helm-docs to create chart README.md
 	$(HELMDOCS) --chart-search-root=charts --template-files=charts/_templates.gotmpl
 
-helm: helm-docs-install helm-docs
+helm: helm-replace helm-docs-install helm-docs ## Replace TAG with version in helm charts, install helm-docs and use helm-docs to create chart README.md
 
 # If you wish to build the manager image targeting other platforms you can use the --platform flag.
 # (i.e. docker build --platform linux/arm64). However, you must enable docker buildKit for it.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build
-docker-build: ## Build docker image with the manager.
+docker-build: ## Build docker image with the plugin.
 	$(CONTAINER_TOOL) build -t ${IMG} .
 
 .PHONY: docker-push
-docker-push: ## Push docker image with the manager.
+docker-push: ## Push docker image with the plugin.
 	$(CONTAINER_TOOL) push ${IMG}
 
 # PLATFORMS defines the target platforms for the manager image be built to provide support to multiple
@@ -101,7 +97,7 @@ docker-push: ## Push docker image with the manager.
 # To adequately provide solutions that are compatible with multiple platforms, you should consider using this option.
 PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
 .PHONY: docker-buildx
-docker-buildx: ## Build and push docker image for the manager for cross-platform support
+docker-buildx: ## Build and push docker image for the plugin for cross-platform support
 	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
 	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
 	- $(CONTAINER_TOOL) buildx create --name argocd-appset-substitute-plugin-builder
@@ -110,13 +106,16 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 	- $(CONTAINER_TOOL) buildx rm argocd-appset-substitute-plugin-builder
 	rm Dockerfile.cross
 
-##@ Deployment
-
 ifndef ignore-not-found
   ignore-not-found = false
 endif
 
 ##@ Dependencies
+
+.PHONY: helm-docs
+helm-docs-install: $(HELMDOCS) ## Install helm-docs binary.
+$(HELMDOCS): $(LOCALBIN) ## Download helm-docs locally if necessary.
+	test -s $(LOCALBIN)/helm-docs || GOBIN=$(LOCALBIN) go install github.com/norwoodj/helm-docs/cmd/helm-docs@latest
 
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
