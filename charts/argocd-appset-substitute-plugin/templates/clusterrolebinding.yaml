@@ -1,0 +1,15 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "argocd-appset-substitute-plugin.fullname" . }}
+  labels:
+  {{- include "argocd-appset-substitute-plugin.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: '{{ include "argocd-appset-substitute-plugin.fullname" . }}'
+subjects:
+- kind: ServiceAccount
+  name: '{{ include "argocd-appset-substitute-plugin.fullname" . }}'
+  namespace: '{{ .Release.Namespace }}'

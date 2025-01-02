@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "argocd-appset-substitute-plugin.fullname" . }}
+  labels:
+  {{- include "argocd-appset-substitute-plugin.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+    {{- include "argocd-appset-substitute-plugin.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+      {{- include "argocd-appset-substitute-plugin.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: controller
+        command:
+        - /plugin
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        envFrom:
+        - secretRef:
+            name: {{ include "argocd-appset-substitute-plugin.fullname" . }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.port | default "4444" }}
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.port | default "4444" }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        ports:
+        - containerPort: {{ .Values.port | default "4444" }}
+        resources: {{- toYaml .Values.resources | nindent 10 }}
+        securityContext: {{- toYaml .Values.containerSecurityContext | nindent 10 }}
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: {{ include "argocd-appset-substitute-plugin.fullname" . }}
+      terminationGracePeriodSeconds: 10
