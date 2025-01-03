@@ -1,4 +1,4 @@
-name: Release Container
+name: Release Container dev/master
 
 on:
   push:
@@ -17,15 +17,17 @@ env:
   PLATFORMS: "linux/amd64,linux/arm64"
 
 jobs:
+  version:
+    name: Version
+    uses: ./.github/workflows/version.yaml
+
   buildx:
     runs-on: ubuntu-latest
+    needs:
+    - version
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Read VERSION file
-        id: read_version
-        run: echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -50,5 +52,5 @@ jobs:
           file: Dockerfile
           push: true
           build-args: |
-            VERSION=${{ env.VERSION }}
-          tags: ${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+            VERSION=${{ needs.version.outputs.version }}
+          tags: ${{ env.IMAGE_NAME }}:${{ needs.version.outputs.version }}

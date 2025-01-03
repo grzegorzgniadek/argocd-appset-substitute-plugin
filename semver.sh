@@ -20,7 +20,7 @@ while [[ $# -gt 0 ]]; do
   "-h")
     HOTFIX=true
     ;;
-  "-branch")
+  "-b")
     BRANCH="$2"
     ;;
   esac

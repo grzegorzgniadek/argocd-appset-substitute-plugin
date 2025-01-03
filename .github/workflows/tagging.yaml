@@ -16,6 +16,11 @@ on:
         type: boolean
         default: false
 
+      prerelease:
+        required: true
+        type: boolean
+        default: true
+
 concurrency:
   group: tagging
   cancel-in-progress: false
@@ -81,3 +86,4 @@ jobs:
           generate_release_notes: true
           body: ${{ steps.changelog.outputs.changelog }}
           tag_name: ${{ inputs.tag }}
+          prerelease: ${{ inputs.prerelease }}
