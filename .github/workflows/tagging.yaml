@@ -1,0 +1,84 @@
+name: "Tag repository (reusable)"
+
+on:
+  workflow_call:
+    inputs:
+      source:
+        type: string
+        required: true
+
+      tag:
+        required: true
+        type: string
+
+      create-release:
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: tagging
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  discussions: write
+   
+jobs:
+  tag:
+    name: Create ${{ inputs.tag }} tag
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.source }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            README.md
+
+      - name: Set commit info
+        run: |
+          git config user.email "ci@github.com"
+          git config user.name "Tag-Releaser"
+          
+      - name: Tag repository
+        run: |
+          git tag -a ${{ inputs.tag }} -m "Automated build tag"
+          git push --tags
+          sleep 5s
+
+  release:
+    name: Create ${{ inputs.tag }} release
+    runs-on: ubuntu-latest
+    if: inputs.create-release
+    needs:
+      - tag
+    continue-on-error: true
+
+    steps:
+      # - name: Generate application token
+      #   uses: actions/create-github-app-token@v1
+      #   id: app-token
+      #   with:
+      #     app-id: ${{ vars.BRANCH_CREATOR_ID }}
+      #     private-key: ${{ secrets.BRANCH_CREATOR_KEY }}
+
+      # - name: Create changelog
+      #   id: changelog
+      #   uses: mikepenz/release-changelog-builder-action@v4
+      #   with:
+      #     fetchViaCommits: true
+      #     exportCache: true
+      #     toTag: ${{ inputs.tag }}
+      #   env:
+      #     GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: ${{ steps.changelog.outputs.changelog }}
+          tag_name: ${{ inputs.tag }}
