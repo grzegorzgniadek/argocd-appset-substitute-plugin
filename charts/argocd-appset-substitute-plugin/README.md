@@ -2,7 +2,7 @@
 
 
 
-![Version: 0.2.2-rc](https://img.shields.io/badge/Version-0.2.2--rc-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.2.2-rc](https://img.shields.io/badge/AppVersion-0.2.2--rc-informational?style=flat-square) 
+![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square) 
 
 ArgoCD Substitute Plugin Helm Chart
 
@@ -21,7 +21,7 @@ ArgoCD Substitute Plugin Helm Chart
 | containerSecurityContext.allowPrivilegeEscalation | bool | `false` |  |
 | containerSecurityContext.capabilities.drop[0] | string | `"ALL"` |  |
 | image.repository | string | `"ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin"` |  |
-| image.tag | string | `"0.2.2-rc"` |  |
+| image.tag | string | `"1.0.0"` |  |
 | imagePullPolicy | string | `"Always"` |  |
 | port | string | `"4444"` |  |
 | replicas | int | `1` |  |
