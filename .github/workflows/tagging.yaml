@@ -3,7 +3,6 @@ name: "Tag repository (reusable)"
 on:
   workflow_call:
     inputs:
-      
       source:
         type: string
         required: true
@@ -20,7 +19,11 @@ on:
 concurrency:
   group: tagging
   cancel-in-progress: false
-     
+
+permissions:
+  contents: write
+  discussions: write
+   
 jobs:
   tag:
     name: Create ${{ inputs.tag }} tag
@@ -38,8 +41,8 @@ jobs:
 
       - name: Set commit info
         run: |
-          git config user.email "ci@centrumrespo.pl"
-          git config user.name "Respo-CI"
+          git config user.email "ci@github.com"
+          git config user.name "Tag-Releaser"
           
       - name: Tag repository
         run: |
@@ -56,44 +59,26 @@ jobs:
     continue-on-error: true
 
     steps:
-      - name: Generate application token
-        uses: actions/create-github-app-token@v1
-        id: app-token
-        with:
-          app-id: ${{ vars.BRANCH_CREATOR_ID }}
-          private-key: ${{ secrets.BRANCH_CREATOR_KEY }}
+      # - name: Generate application token
+      #   uses: actions/create-github-app-token@v1
+      #   id: app-token
+      #   with:
+      #     app-id: ${{ vars.BRANCH_CREATOR_ID }}
+      #     private-key: ${{ secrets.BRANCH_CREATOR_KEY }}
 
-      - name: Create changelog
-        id: changelog
-        uses: mikepenz/release-changelog-builder-action@v4
-        with:
-          fetchViaCommits: true
-          exportCache: true
-          toTag: ${{ inputs.tag }}
-        env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+      # - name: Create changelog
+      #   id: changelog
+      #   uses: mikepenz/release-changelog-builder-action@v4
+      #   with:
+      #     fetchViaCommits: true
+      #     exportCache: true
+      #     toTag: ${{ inputs.tag }}
+      #   env:
+      #     GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
+          generate_release_notes: true
           body: ${{ steps.changelog.outputs.changelog }}
           tag_name: ${{ inputs.tag }}
-
-      - name: Install jq
-        uses: dcarbone/install-jq-action@v2.1.0
-      
-      - name: Create version in Jira
-        run: |
-          ISSUES=$(echo '${{ steps.changelog.outputs.changelog }}' | grep -Eio "(DV|DEV)(-| )[0-9]{3,6}" | echo "")
-          BODY="{\"issues\": [],\"version\": \"${{ inputs.tag }}\"}"
-
-          if [[ $ISSUES != "" ]]; then
-            for ISSUE in $ISSUES; do
-              TEMP=$(echo ${ISSUE^^} | tr ' ' '-')
-              BODY=$(echo "$BODY" | jq ".issues += [\"$TEMP\"]")
-            done
-            
-            curl -X POST -H 'Content-type: application/json' \
-              --data "$BODY" \
-              ${{ vars.JIRA_VERSION_WEBHOOK }}
-          fi

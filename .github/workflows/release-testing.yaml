@@ -1,11 +1,11 @@
-name: Release Master
+name: Release feat
 
 on:
   push:
     paths-ignore:
     - 'charts/**'
     branches:
-      - master
+      - feat*
 
 permissions:
   contents: write
