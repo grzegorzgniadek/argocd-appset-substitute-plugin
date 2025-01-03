@@ -7,7 +7,7 @@ containerSecurityContext:
       - ALL
 image:
   repository: ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin
-  tag: v0.3.0-rc
+  tag: v0.0.2-rc
 imagePullPolicy: Always
 resources:
   limits:

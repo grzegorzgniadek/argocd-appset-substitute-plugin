@@ -1,11 +1,13 @@
-name: Release dev
+name: Release
 
 on:
   push:
     paths-ignore:
     - 'charts/**'
     branches:
-    - 'dev'
+    - master
+    - dev
+
 
 permissions:
   contents: write

@@ -1,6 +1,6 @@
 # Image URL to use all building/pushing image targets
 
-TAG=$(shell cat VERSION)
+TAG=$(shell curl  "https://api.github.com/repos/grzegorzgniadek/argocd-appset-substitute-plugin/tags" | jq -r '.[0].name')
 
 IMG ?= ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin:$(TAG)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.

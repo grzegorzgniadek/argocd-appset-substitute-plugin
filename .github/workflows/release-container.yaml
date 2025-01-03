@@ -1,4 +1,4 @@
-name: Release Container dev/master
+name: Build/Push Container 
 
 on:
   push:

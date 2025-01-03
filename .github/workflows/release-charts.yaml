@@ -6,32 +6,21 @@ on:
     - 'charts/**'
     branches:
       - master
+      - dev
 
 permissions:
   contents: write
   packages: write
 
 jobs:
-  check-version:
-    runs-on: ubuntu-latest
-    outputs:
-      VERSION_DEV: ${{ steps.read_version.outputs.VERSION_DEV }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  version:
+    name: Version
+    uses: ./.github/workflows/version.yaml
 
-      - name: Read VERSION file
-        id: read_version
-        run: |
-          if grep -q "rc" VERSION ; then
-            echo "VERSION_DEV=true" >> $GITHUB_OUTPUT
-          else
-            echo "VERSION_DEV=false" >> $GITHUB_OUTPUT
-          fi
   release:
-    needs: [check-version]
+    needs:
+    - version
     runs-on: ubuntu-latest
-    if: needs.check-version.outputs.VERSION_DEV == 'false'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
