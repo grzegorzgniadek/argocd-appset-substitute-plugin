@@ -73,3 +73,4 @@ fi
 [[ ! $VERSION_ONLY == "true" ]] && echo "Old version: v$OLD_VERSION"
 [[ ! $VERSION_ONLY == "true" ]] && echo "New version: $VERSION"
 exit 0
+

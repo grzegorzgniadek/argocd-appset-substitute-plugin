@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  USE_LATEST_TAG: ${{ github.ref_name == 'master' }}
+  USE_LATEST_TAG: true
 
 jobs:
   calculate:
