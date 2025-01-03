@@ -20,6 +20,9 @@ while [[ $# -gt 0 ]]; do
   "-h")
     HOTFIX=true
     ;;
+  "-branch")
+    BRANCH="$2"
+    ;;
   esac
   shift
 done
@@ -64,8 +67,12 @@ else
   else
     PATCH=$((PATCH + 1))
   fi
+fi
 
+if [[ $BRANCH == "master" ]]; then
   VERSION="v$MAJOR.$MINOR.$PATCH"
+elif [[ $BRANCH == "dev" ]]; then
+  VERSION="v$MAJOR.$MINOR.$PATCH-rc"
 fi
 
 [[ $VERSION_ONLY == "true" ]] && echo "$VERSION"
