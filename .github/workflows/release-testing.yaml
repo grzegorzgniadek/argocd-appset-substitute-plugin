@@ -2,8 +2,6 @@ name: Release feat
 
 on:
   push:
-    paths-ignore:
-    - 'charts/**'
     branches:
       - feat*
 
