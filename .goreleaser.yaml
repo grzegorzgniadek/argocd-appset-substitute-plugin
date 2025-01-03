@@ -27,7 +27,7 @@ git:
 
 env:
   - REGISTRY={{ if index .Env "REGISTRY"  }}{{ .Env.REGISTRY }}{{ else }}local{{ end }}
-  - IMAGE_NAME={{ if index .Env "IMAGE_NAME"  }}{{ .Env.IMAGE_NAME }}{{ else }}vault-autounseal-operator{{ end }}
+  - IMAGE_NAME={{ if index .Env "IMAGE_NAME"  }}{{ .Env.IMAGE_NAME }}{{ else }}argocd-appset-substitute-plugin{{ end }}
 
 builds:
   - env:
@@ -35,7 +35,7 @@ builds:
     goos:
       - linux
       - darwin
-    main: ./cmd/vault-autounseal-operator
+    main: ./cmd
     goarch:
       - amd64
       - arm64
@@ -50,7 +50,7 @@ dockers:
     # - "--cache-to=type=registry,ref={{ .Env.REGISTRY }}/{{ .Env.IMAGE_NAME }}:buildcache"
     # - "--cache-from=type=registry,ref={{ .Env.REGISTRY }}/{{ .Env.IMAGE_NAME }}:buildcache"    
     goarch: amd64
-    dockerfile: Dockerfile.goreleaser
+    dockerfile: Dockerfile
     skip_push: false
 
   - image_templates:
@@ -62,7 +62,7 @@ dockers:
     # - "--cache-to=type=registry,ref={{ .Env.REGISTRY }}/{{ .Env.IMAGE_NAME }}:buildcache"
     # - "--cache-from=type=registry,ref={{ .Env.REGISTRY }}/{{ .Env.IMAGE_NAME }}:buildcache"
     goarch: arm64
-    dockerfile: Dockerfile.goreleaser
+    dockerfile: Dockerfile
     skip_push: false
 
 docker_manifests:
