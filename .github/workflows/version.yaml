@@ -1,0 +1,58 @@
+name: "Calculate version (reusable)"
+
+on:
+  workflow_call:
+    outputs:
+      version:
+        description: "Calculated build version"
+        value: ${{ jobs.calculate.outputs.version }}
+        
+concurrency:
+  group: version-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  USE_LATEST_TAG: ${{ github.ref_name == 'master' }}
+
+jobs:
+  calculate:
+    name: Calculate
+    runs-on: ubuntu-latest
+    outputs: 
+      version: ${{ steps.calc.outputs.version }}
+
+    #TODO: simple semver here
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            semver.sh
+
+      - name: Perform calculations
+        id: calc
+        run: |
+          VERSION=0
+          if [[ ${{ github.ref_name }} =~ ^v[0-9]+.[0-9]+.[0-9]+$ ]]; then    
+            VERSION="${{ github.ref_name }}"
+
+          elif [[ ${{ github.event_name }} == "workflow_dispatch" ]]; then
+            VERSION=m${{ github.run_number }}
+          
+          elif [[ ${{ github.event_name }} == "pull_request" ]]; then    
+            VERSION="pr${{ github.event.number }}"
+            
+          elif [[ ${{ env.USE_LATEST_TAG }} == "true" ]]; then
+            VERSION=$(bash semver.sh -q )
+
+          elif [[ ${{ github.ref_name }}  =~ ^hotfix ]]; then    
+            OLD_VERSION=$(sed 's:.*/\(v[0-9]*\.[0-9]*\.[0-9]*\).*:\1:g' <<< ${{ github.ref_name }})
+            VERSION=$(bash semver.sh -q -v $OLD_VERSION -h )
+          fi
+          # Make sure hotfix tag won't make it into main
+          [[ ${{ github.ref_name }} == "master" && $VERSION =~ "-" ]] && exit 1 || true
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Calculated version: $VERSION"

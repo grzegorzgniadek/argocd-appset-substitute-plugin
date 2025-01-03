@@ -46,12 +46,6 @@ help: ## Display this help.
 
 ##@ Development
 
-.PHONY: helm-replace
-helm-replace: ## Replace Version Tag with helm charts values
-	TAG=$(TAG) yq -i '.appVersion = strenv(TAG)' charts/argocd-appset-substitute-plugin/Chart.yaml
-	TAG=$(TAG) yq -i '.version = strenv(TAG)' charts/argocd-appset-substitute-plugin/Chart.yaml
-	TAG=$(TAG) yq -i '.image.tag = strenv(TAG)' charts/argocd-appset-substitute-plugin/values.yaml
-
 .PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...
@@ -59,6 +53,15 @@ fmt: ## Run go fmt against code.
 .PHONY: vet
 vet: ## Run go vet against code.
 	go vet ./...
+
+.PHONY: test
+test: ## Run go test against code.
+	go test ./... -v
+
+.PHONY: helm-replace
+helm-replace: ## Replace Version Tag in helm charts values
+	TAG=$(TAG) yq -i '.appVersion = strenv(TAG)' charts/argocd-appset-substitute-plugin/Chart.yaml
+	TAG=$(TAG) yq -i '.image.tag = strenv(TAG)' charts/argocd-appset-substitute-plugin/values.yaml
 
 ##@ Build
 
@@ -73,9 +76,11 @@ run: fmt vet ## Run a plugin from your host.
 HELMDOCS ?= $(LOCALBIN)/helm-docs
 
 # Create Helm-docs in charts directory
+.PHONY: helm-docs
 helm-docs: helm-docs-install ## Use helm-docs to create chart README.md
 	$(HELMDOCS) --chart-search-root=charts --template-files=charts/_templates.gotmpl
 
+.PHONY: helm
 helm: helm-replace helm-docs-install helm-docs ## Replace TAG with version in helm charts, install helm-docs and use helm-docs to create chart README.md
 
 # If you wish to build the manager image targeting other platforms you can use the --platform flag.
@@ -109,6 +114,15 @@ docker-buildx: ## Build and push docker image for the plugin for cross-platform 
 ifndef ignore-not-found
   ignore-not-found = false
 endif
+
+##@ Deploy
+.PHONY: helm-template
+helm-template: helm-replace helm-docs-install helm-docs ## Run helm-template
+	helm template argocd-substitute-plugin charts/argocd-appset-substitute-plugin -n argocd --debug
+
+.PHONY: helm-install
+helm-install: helm-replace helm-docs-install helm-docs ## Install Helm chart in argocd namespace
+	helm upgrade --install argocd-substitute-plugin charts/argocd-appset-substitute-plugin -n argocd
 
 ##@ Dependencies
 

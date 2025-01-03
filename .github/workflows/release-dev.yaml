@@ -1,0 +1,17 @@
+name: Release Dev
+
+on:
+  push:
+    paths-ignore:
+    - 'charts/**'
+    branches:
+      - dev
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  version:
+    name: Version
+    uses: ./.github/workflows/version.yaml
