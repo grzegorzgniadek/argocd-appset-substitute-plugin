@@ -5,7 +5,7 @@ on:
     paths-ignore:
     - 'charts/**'
     branches:
-      - feat*
+    - 'feat/**'
 
 permissions:
   contents: write
