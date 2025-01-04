@@ -15,3 +15,11 @@ repos:
         args:
           - --chart-search-root=charts
           - --template-files=charts/_templates.gotmpl
+  - repo: local
+    hooks:
+      - id: make-helm
+        name: Run make helm on charts changes
+        entry: make helm
+        language: system
+        types: [file]
+        files: ^charts/
