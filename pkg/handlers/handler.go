@@ -1,13 +1,14 @@
 package handlers
 
 import (
-	"argocd-substitute-plugin/pkg/envs"
-	"argocd-substitute-plugin/pkg/logic"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/grzegorzgniadek/argocd-appset-substitute-plugin/pkg/envs"
+	"github.com/grzegorzgniadek/argocd-appset-substitute-plugin/pkg/logic"
 )
 
 var (

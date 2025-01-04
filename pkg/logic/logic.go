@@ -1,8 +1,9 @@
 package logic
 
 import (
-	"argocd-substitute-plugin/pkg/client"
 	"context"
+
+	"github.com/grzegorzgniadek/argocd-appset-substitute-plugin/pkg/client"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

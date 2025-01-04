@@ -1,12 +1,13 @@
 package main
 
 import (
-	"argocd-substitute-plugin/pkg/envs"
-	"argocd-substitute-plugin/pkg/handlers"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/grzegorzgniadek/argocd-appset-substitute-plugin/pkg/envs"
+	"github.com/grzegorzgniadek/argocd-appset-substitute-plugin/pkg/handlers"
 )
 
 func main() {
