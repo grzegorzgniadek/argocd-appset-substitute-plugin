@@ -1,0 +1,8 @@
+apiVersion: v1
+data:
+  MACHINE_ARN: fewerwer
+  WAF_ARN: fewffvcvxc34535
+kind: ConfigMap
+metadata:
+  name: cluster-vars
+  namespace: default

@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: testing
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+        - plugin:
+            configMapRef:
+              name: argocd-substitute-plugin
+            input:
+              parameters:
+                kind: "ConfigMap"
+                name: "cluster-vars"
+                namespace: "default"
+            requeueAfterSeconds: 30
+        - plugin:
+            configMapRef:
+              name: argocd-substitute-plugin
+            input:
+              parameters:
+                kind: "Secret"
+                name: "cluster-vars2"
+                namespace: "default"
+            requeueAfterSeconds: 30
+  template:
+    metadata:
+      name: 'pod-info'
+    spec:
+      project: default
+      sources:
+      - repoURL: https://stefanprodan.github.io/podinfo
+        chart: podinfo
+        targetRevision: 6.7.1
+        helm:
+          releaseName: podinfo
+          valuesObject:
+            something: "{{ .MACHINE_ARN }}"
+            nextsomething: "{{ .WAF_ARN }}"
+            nextnextsomething: "{{ .something2 }}"
+            nextnextnextsomething: "{{ .something_bla }}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: default
+      syncPolicy:
+        automated: 
+          prune: true
+          selfHeal: true

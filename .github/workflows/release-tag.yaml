@@ -1,0 +1,34 @@
+name: Release Tag
+
+on:
+  push:
+    paths-ignore:
+    - 'charts/**'
+    branches:
+    - master
+    - dev
+
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  version:
+    name: Version
+    uses: ./.github/workflows/version.yaml
+
+  tagging:
+    if: startsWith(needs.version.outputs.version, 'v')
+    name: Tagging
+    uses: ./.github/workflows/tagging.yaml
+    needs:
+    - version
+    with:
+      source: ${{ github.event.after }}
+      tag: ${{ needs.version.outputs.version }}
+      create-release: ${{ startsWith(needs.version.outputs.version, 'v') }}
+      prerelease: ${{ endsWith(needs.version.outputs.version, 'rc') }}
+    secrets: inherit
+
+

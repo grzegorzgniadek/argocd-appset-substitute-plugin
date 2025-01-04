@@ -1,0 +1,25 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.16.1
+    hooks:
+      - id: gitleaks
+  - repo: https://github.com/gruntwork-io/pre-commit
+    rev: v0.1.23 # Get the latest from: https://github.com/gruntwork-io/pre-commit/releases
+    hooks:
+      - id: gofmt
+      - id: helmlint
+  - repo: https://github.com/norwoodj/helm-docs
+    rev: v1.2.0
+    hooks:
+      - id: helm-docs
+        args:
+          - --chart-search-root=charts
+          - --template-files=charts/_templates.gotmpl
+  - repo: local
+    hooks:
+      - id: make-helm
+        name: Run make helm on charts changes
+        entry: make helm
+        language: system
+        types: [file]
+        files: ^charts/
