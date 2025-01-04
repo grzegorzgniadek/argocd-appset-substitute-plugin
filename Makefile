@@ -2,6 +2,9 @@
 
 TAG=$(shell curl  "https://api.github.com/repos/grzegorzgniadek/argocd-appset-substitute-plugin/tags" | jq -r '.[0].name')
 
+BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
+HELM_VERSION=$(shell bash semver.sh -b $(BRANCH) -helm -q )
+
 IMG ?= ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin:$(TAG)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.30.0
@@ -62,6 +65,7 @@ test: ## Run go test against code.
 helm-replace: ## Replace Version Tag in helm charts values
 	TAG=$(TAG) yq -i '.appVersion = strenv(TAG)' charts/argocd-appset-substitute-plugin/Chart.yaml
 	TAG=$(TAG) yq -i '.image.tag = strenv(TAG)' charts/argocd-appset-substitute-plugin/values.yaml
+	HELM_VERSION=$(HELM_VERSION) yq -i '.version = strenv(HELM_VERSION)' charts/argocd-appset-substitute-plugin/Chart.yaml
 
 ##@ Build
 

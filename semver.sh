@@ -6,6 +6,7 @@ VERSION_ONLY=false
 USE_LATEST_TAG=true
 HOTFIX=false
 VERSION=""
+HELM=false
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -22,6 +23,9 @@ while [[ $# -gt 0 ]]; do
     ;;
   "-b")
     BRANCH="$2"
+    ;;
+  "-helm")
+    HELM=true
     ;;
   esac
   shift
@@ -69,10 +73,14 @@ else
   fi
 fi
 
-if [[ $BRANCH == "master" ]]; then
+if [[ $BRANCH == "master" && $HELM == "false" ]]; then
   VERSION="v$MAJOR.$MINOR.$PATCH"
-elif [[ $BRANCH == "dev" ]]; then
+elif [[ $BRANCH == "master" && $HELM == "true" ]]; then
+  VERSION="$MAJOR.$MINOR.$PATCH"
+elif [[ $BRANCH == "dev" && $HELM == "false" ]]; then
   VERSION="v$MAJOR.$MINOR.$PATCH-rc"
+elif [[ $BRANCH == "dev" && $HELM == "true" ]]; then
+  VERSION="$MAJOR.$MINOR.$PATCH-rc"
 fi
 
 [[ $VERSION_ONLY == "true" ]] && echo "$VERSION"
