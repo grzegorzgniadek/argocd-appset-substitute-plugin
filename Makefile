@@ -64,7 +64,7 @@ test: ## Run go test against code.
 .PHONY: helm-replace
 helm-replace: ## Replace Version Tag in helm charts values
 	TAG=$(TAG) yq -i '.appVersion = strenv(TAG)' charts/argocd-appset-substitute-plugin/Chart.yaml
-	TAG=$(TAG) yq -i '.image.tag = strenv(TAG)' charts/argocd-appset-substitute-plugin/values.yaml
+	TAG=$(TAG) yq -i '.controller.image.tag = strenv(TAG)' charts/argocd-appset-substitute-plugin/values.yaml
 	HELM_VERSION=$(HELM_VERSION) yq -i '.version = strenv(HELM_VERSION)' charts/argocd-appset-substitute-plugin/Chart.yaml
 
 ##@ Build

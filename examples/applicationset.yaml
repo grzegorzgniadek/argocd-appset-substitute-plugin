@@ -11,7 +11,7 @@ spec:
         generators:
         - plugin:
             configMapRef:
-              name: argocd-substitute-plugin
+              name: argocd-substitute-plugin-controller
             input:
               parameters:
                 kind: "ConfigMap"
@@ -20,7 +20,7 @@ spec:
             requeueAfterSeconds: 30
         - plugin:
             configMapRef:
-              name: argocd-substitute-plugin
+              name: argocd-substitute-plugin-controller
             input:
               parameters:
                 kind: "Secret"
