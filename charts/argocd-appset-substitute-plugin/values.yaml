@@ -69,8 +69,10 @@ controller:
   livenessProbe:
     initialDelaySeconds: 15
     periodSeconds: 20
+
   secret:
     token: ""
+
   service:
     enabled: true
     annotations: {}
