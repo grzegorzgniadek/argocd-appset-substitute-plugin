@@ -1,14 +1,53 @@
----
+{{- if .Values.controller.service.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "argocd-appset-substitute-plugin.fullname" . }}
+{{- if .Values.controller.service.annotations }}
+  annotations:
+{{ toYaml .Values.controller.service.annotations | indent 4 }}
+{{- end }}
   labels:
-  {{- include "argocd-appset-substitute-plugin.labels" . | nindent 4 }}
+    {{- include "argocd-appset-substitute-plugin.controller.labels" . | nindent 4 }}
+{{- if .Values.controller.service.labels }}
+{{ toYaml .Values.controller.service.labels | indent 4 }}
+{{- end }}
+  name: {{ template "argocd-appset-substitute-plugin.controller.fullname" . }}
+  namespace: {{ include "argocd-appset-substitute-plugin.namespace" . }}
 spec:
-  selector:
-    {{- include "argocd-appset-substitute-plugin.selectorLabels" . | nindent 6 }}
+{{- if .Values.controller.service.clusterIP }}
+  clusterIP: {{ .Values.controller.service.clusterIP }}
+{{- end }}
+{{- if .Values.controller.service.externalIPs }}
+  externalIPs:
+{{ toYaml .Values.controller.service.externalIPs | indent 4 }}
+{{- end }}
+{{- if .Values.controller.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.controller.service.loadBalancerIP }}
+{{- end }}
+{{- if .Values.controller.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+  {{- range $cidr := .Values.controller.service.loadBalancerSourceRanges }}
+    - {{ $cidr }}
+  {{- end }}
+{{- end }}
+{{- if .Values.controller.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.controller.service.externalTrafficPolicy }}
+{{- end }}
   ports:
-    - protocol: TCP
-      port: 80
-      targetPort: {{ .Values.port }}
+    - name: http
+      port: {{ .Values.controller.service.servicePort }}
+      protocol: TCP
+      targetPort: {{ .Values.controller.port | default "4444" }}
+    {{- if .Values.controller.service.nodePort }}
+      nodePort: {{ .Values.controller.service.nodePort }}
+    {{- end }}
+{{- if .Values.controller.service.additionalPorts }}
+{{ toYaml .Values.controller.service.additionalPorts | indent 4 }}
+{{- end }}
+  selector:
+    {{- include "argocd-appset-substitute-plugin.controller.matchLabels" . | nindent 4 }}
+{{- if .Values.controller.service.sessionAffinity }}
+  sessionAffinity: {{ .Values.controller.service.sessionAffinity }}
+{{- end }}
+  type: "{{ .Values.controller.service.type }}"
+{{- end -}}

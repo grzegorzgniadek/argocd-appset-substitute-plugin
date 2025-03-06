@@ -1,46 +1,257 @@
----
-apiVersion: apps/v1
+apiVersion: {{ template "argocd-appset-substitute-plugin.deployment.apiVersion" . }}
 kind: Deployment
 metadata:
-  name: {{ include "argocd-appset-substitute-plugin.fullname" . }}
+{{- if .Values.controller.deploymentAnnotations }}
+  annotations:
+    {{ toYaml .Values.controller.deploymentAnnotations | nindent 4 }}
+{{- end }}
   labels:
-  {{- include "argocd-appset-substitute-plugin.labels" . | nindent 4 }}
+    {{- include "argocd-appset-substitute-plugin.controller.labels" . | nindent 4 }}
+  name: {{ template "argocd-appset-substitute-plugin.controller.fullname" . }}
+  namespace: {{ include "argocd-appset-substitute-plugin.namespace" . }}
 spec:
-  replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
-    {{- include "argocd-appset-substitute-plugin.selectorLabels" . | nindent 6 }}
+      {{- include "argocd-appset-substitute-plugin.controller.matchLabels" . | nindent 6 }}
+  replicas: {{ .Values.controller.replicaCount }}
+  revisionHistoryLimit: {{ .Values.controller.revisionHistoryLimit }}
+  {{- if .Values.controller.strategy }}
+  strategy:
+{{ toYaml .Values.controller.strategy | trim | indent 4 }}
+    {{ if eq .Values.controller.strategy.type "Recreate" }}rollingUpdate: null{{ end }}
+{{- end }}
   template:
     metadata:
+    {{- if .Values.controller.podAnnotations }}
+      annotations:
+        {{ toYaml .Values.controller.podAnnotations | nindent 8 }}
+    {{- end }}
       labels:
-      {{- include "argocd-appset-substitute-plugin.selectorLabels" . | nindent 8 }}
+        {{- include "argocd-appset-substitute-plugin.controller.labels" . | nindent 8 }}
+        {{- if .Values.controller.podLabels}}
+        {{ toYaml .Values.controller.podLabels | nindent 8 }}
+        {{- end}}
     spec:
+{{- if .Values.controller.priorityClassName }}
+      priorityClassName: "{{ .Values.controller.priorityClassName }}"
+{{- end }}
+{{- if .Values.controller.schedulerName }}
+      schedulerName: "{{ .Values.controller.schedulerName }}"
+{{- end }}
+{{- if semverCompare ">=1.13-0" .Capabilities.KubeVersion.GitVersion }}
+      {{- if or (.Values.controller.enableServiceLinks) (eq (.Values.controller.enableServiceLinks | toString) "<nil>") }}
+      enableServiceLinks: true
+      {{- else }}
+      enableServiceLinks: false
+      {{- end }}
+{{- end }}
+      serviceAccountName: {{ template "argocd-appset-substitute-plugin.serviceAccountName.controller" . }}
+{{- if kindIs "bool" .Values.controller.automountServiceAccountToken }}
+      automountServiceAccountToken: {{ .Values.controller.automountServiceAccountToken }}
+{{- end }}
+      {{- if .Values.controller.extraInitContainers }}
+      initContainers:
+{{ toYaml .Values.controller.extraInitContainers | indent 8 }}
+      {{- end }}
       containers:
-      - name: controller
-        command:
-        - /plugin
-        image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
-        imagePullPolicy: {{ .Values.imagePullPolicy }}
-        envFrom:
-        - secretRef:
-            name: {{ include "argocd-appset-substitute-plugin.fullname" . }}
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: {{ .Values.port | default "4444" }}
-          initialDelaySeconds: 15
-          periodSeconds: 20
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: {{ .Values.port | default "4444" }}
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        ports:
-        - containerPort: {{ .Values.port | default "4444" }}
-        resources: {{- toYaml .Values.resources | nindent 10 }}
-        securityContext: {{- toYaml .Values.containerSecurityContext | nindent 10 }}
+        - name: {{ template "argocd-appset-substitute-plugin.name" . }}-{{ .Values.controller.name }}
+          {{- if .Values.controller.image.digest }}
+          image: "{{ .Values.controller.image.repository }}@{{ .Values.controller.image.digest }}"
+          {{- else }}
+          image: "{{ .Values.controller.image.repository }}:{{ .Values.controller.image.tag | default .Chart.AppVersion}}"
+          {{- end }}
+          imagePullPolicy: "{{ .Values.controller.image.pullPolicy }}"
+          {{- with .Values.controller.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.controller.env }}
+          env:
+{{ toYaml .Values.controller.env | indent 12}}
+          {{- end }}
+          envFrom:
+          - secretRef:
+              name: {{ include "argocd-appset-substitute-plugin.controller.fullname" . }}
+          ports:
+            - containerPort: {{ .Values.controller.port | default "4444" }}
+          {{- if .Values.controller.portName }}
+              name: {{ .Values.controller.portName }}
+          {{- end }}
+          {{- if .Values.controller.hostPort }}
+              hostPort: {{ .Values.controller.hostPort }}
+          {{- end }}
+          readinessProbe:
+            {{- if not .Values.controller.tcpSocketProbeEnabled }}
+            httpGet:
+              path: /healthz
+              port: {{ .Values.controller.port | default "4444" }}
+              scheme: {{ .Values.controller.probeScheme }}
+              {{- with .Values.controller.probeHeaders }}
+              httpHeaders:
+{{- toYaml . | nindent 14 }}
+              {{- end }}
+            {{- else }}
+            tcpSocket:
+              port: {{ .Values.controller.port | default "4444" }}
+            {{- end }}
+            initialDelaySeconds: {{ .Values.controller.readinessProbeInitialDelay }}
+            periodSeconds: {{ .Values.controller.readinessProbePeriodSeconds }}
+            timeoutSeconds: {{ .Values.controller.readinessProbeTimeout }}
+            failureThreshold: {{ .Values.controller.readinessProbeFailureThreshold }}
+            successThreshold: {{ .Values.controller.readinessProbeSuccessThreshold }}
+          livenessProbe:
+            {{- if not .Values.controller.tcpSocketProbeEnabled }}
+            httpGet:
+              path: /healthz
+              port: {{ .Values.controller.port | default "4444" }}
+              scheme: {{ .Values.controller.probeScheme }}
+              {{- with .Values.controller.probeHeaders }}
+              httpHeaders:
+{{- toYaml . | nindent 14 }}
+              {{- end }}
+            {{- else }}
+            tcpSocket:
+              port: {{ .Values.controller.port | default "4444" }}
+            {{- end }}
+            initialDelaySeconds: {{ .Values.controller.livenessProbeInitialDelay }}
+            periodSeconds: {{ .Values.controller.livenessProbePeriodSeconds }}
+            timeoutSeconds: {{ .Values.controller.livenessProbeTimeout }}
+            failureThreshold: {{ .Values.controller.livenessProbeFailureThreshold }}
+            successThreshold: {{ .Values.controller.livenessProbeSuccessThreshold }}
+          {{- if .Values.controller.startupProbe.enabled }}
+          startupProbe:
+            {{- if not .Values.controller.tcpSocketProbeEnabled }}
+            httpGet:
+              path: /healthz
+              port: {{ .Values.controller.port | default "4444" }}
+              scheme: {{ .Values.controller.probeScheme }}
+              {{- if .Values.controller.probeHeaders }}
+              httpHeaders:
+              {{- range .Values.controller.probeHeaders}}
+              - name: {{ .name }}
+                value: {{ .value }}
+              {{- end }}
+              {{- end }}
+            {{- else }}
+            tcpSocket:
+              port: {{ .Values.controller.port | default "4444" }}
+            {{- end }}
+            failureThreshold: {{ .Values.controller.startupProbe.failureThreshold }}
+            periodSeconds: {{ .Values.controller.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.controller.startupProbe.timeoutSeconds }}
+          {{- end }}
+          {{- with .Values.controller.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          {{- range .Values.controller.extraHostPathMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- range .Values.controller.extraConfigmapMounts }}
+            - name: {{ $.Values.controller.name }}-{{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- range .Values.controller.extraSecretMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- if .Values.controller.extraVolumeMounts }}
+            {{ toYaml .Values.controller.extraVolumeMounts | nindent 12 }}
+          {{- end }}
+          {{- with .Values.controller.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- if .Values.controller.sidecarContainers }}
+        {{- range $name, $spec :=  .Values.controller.sidecarContainers }}
+        - name: {{ $name }}
+          {{- if kindIs "string" $spec }}
+            {{- tpl $spec $ | nindent 10 }}
+          {{- else }}
+            {{- toYaml $spec | nindent 10 }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- if .Values.controller.hostNetwork }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+    {{- else }}
+      dnsPolicy: {{ .Values.controller.dnsPolicy }}
+    {{- end }}
+    {{- if .Values.controller.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.controller.imagePullSecrets | indent 8 }}
+    {{- end }}
+    {{- if .Values.controller.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.controller.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.controller.hostAliases }}
+      hostAliases:
+{{ toYaml .Values.controller.hostAliases | indent 8 }}
+    {{- end }}
+    {{- if .Values.controller.dnsConfig }}
+      dnsConfig:
+{{ toYaml .Values.controller.dnsConfig | indent 8 }}
+    {{- end }}
+    {{- with .Values.controller.securityContext }}
       securityContext:
-        runAsNonRoot: true
-      serviceAccountName: {{ include "argocd-appset-substitute-plugin.fullname" . }}
-      terminationGracePeriodSeconds: 10
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- if .Values.controller.tolerations }}
+      tolerations:
+{{ toYaml .Values.controller.tolerations | indent 8 }}
+    {{- end }}
+    {{- if or .Values.controller.affinity .Values.controller.podAntiAffinity }}
+      affinity:
+    {{- end }}
+      {{- with .Values.controller.affinity }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.controller.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.controller.terminationGracePeriodSeconds }}
+      volumes:
+      {{- range .Values.controller.extraHostPathMounts }}
+        - name: {{ .name }}
+          hostPath:
+            path: {{ .hostPath }}
+      {{- end }}
+      {{- range .Values.controller.extraConfigmapMounts }}
+        - name: {{ $.Values.controller.name }}-{{ .name }}
+          configMap:
+            name: {{ .configMap }}
+      {{- end }}
+      {{- range .Values.controller.extraSecretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+            {{- with .optional }}
+            optional: {{ . }}
+            {{- end }}
+      {{- end }}
+{{- if .Values.controller.extraVolumes }}
+{{ toYaml .Values.controller.extraVolumes | indent 8}}
+{{- end }}
+        - name: storage-volume
+        {{- if .Values.controller.persistentVolume.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ if .Values.controller.persistentVolume.existingClaim }}{{ .Values.controller.persistentVolume.existingClaim }}{{- else }}{{ template "argocd-appset-substitute-plugin.controller.fullname" . }}{{- end }}
+        {{- else }}
+          emptyDir:
+          {{- if .Values.controller.emptyDir.sizeLimit }}
+            sizeLimit: {{ .Values.controller.emptyDir.sizeLimit }}
+          {{- else }}
+            {}
+          {{- end -}}
+        {{- end -}}

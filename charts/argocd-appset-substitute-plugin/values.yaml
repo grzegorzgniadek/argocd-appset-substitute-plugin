@@ -1,21 +1,74 @@
-replicas: 1
-port: "4444"
-containerSecurityContext:
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
-image:
-  repository: ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin
-  tag: v1.0.3
-imagePullPolicy: Always
-resources:
-  limits:
-    cpu: 200m
-    memory: 128Mi
-  requests:
-    cpu: 10m
-    memory: 64Mi
-serviceAccount:
-  annotations: {}
-version: "0.1.3-rc"
+rbac:
+  create: true
+serviceAccounts:
+  controller:
+    create: true
+    name: ""
+    annotations: {}
+    labels: {}
+commonMetaLabels: {}
+controller:
+  name: controller
+  port: "4535"
+  clusterRoleNameOverride: ""
+  releaseNamespace: false
+  sidecarContainers: {}
+  sidecarTemplateValues: {}
+  imagePullSecrets: []
+  image:
+    repository: ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin
+    digest: ""
+    pullPolicy: IfNotPresent
+    tag: v1.1.0
+  command:
+    - /plugin
+  priorityClassName: ""
+  env: []
+  extraArgs: {}
+  extraInitContainers: []
+  extraVolumeMounts: []
+  extraVolumes: []
+  extraHostPathMounts: []
+  extraConfigmapMounts: []
+  extraSecretMounts: []
+  configMapOverrideName: ""
+  extraConfigmapLabels: {}
+  fullnameOverride: ""
+  startupProbe:
+    enabled: false
+    periodSeconds: 5
+    failureThreshold: 30
+    timeoutSeconds: 10
+  persistentVolume:
+    enabled: false
+  emptyDir:
+    sizeLimit: {}
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 64Mi
+  securityContext:
+    runAsNonRoot: true
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  secret:
+    token: ""
+  service:
+    enabled: true
+    annotations: {}
+    labels: {}
+    clusterIP: ""
+    externalIPs: []
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+    servicePort: 80
+    sessionAffinity: None
+    type: ClusterIP
+    externalTrafficPolicy: ""
+    additionalPorts: []

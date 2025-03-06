@@ -1,10 +1,20 @@
+{{- if (empty .Values.controller.configMapOverrideName) -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "argocd-appset-substitute-plugin.fullname" . }}
+{{- with .Values.controller.configMapAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
   labels:
-  {{- include "argocd-appset-substitute-plugin.labels" . | nindent 4 }}
+    {{- include "argocd-appset-substitute-plugin.controller.labels" . | nindent 4 }}
+    {{- with .Values.controller.extraConfigmapLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  name: {{ template "argocd-appset-substitute-plugin.controller.fullname" . }}
+  namespace: {{ include "argocd-appset-substitute-plugin.namespace" . }}
 data:
-  token: "${{ include "argocd-appset-substitute-plugin.fullname" . }}:token"
-  baseUrl: "http://{{ include "argocd-appset-substitute-plugin.fullname" . }}.{{ .Release.Namespace }}.svc"
+  token: "${{ include "argocd-appset-substitute-plugin.controller.fullname" . }}:token"
+  baseUrl: "http://{{ include "argocd-appset-substitute-plugin.controller.fullname" . }}.{{ .Release.Namespace }}.svc"
   requestTimeout: "60"
+{{- end -}}
