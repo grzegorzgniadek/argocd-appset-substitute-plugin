@@ -19,11 +19,13 @@ ArgoCD Substitute Plugin Helm Chart
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | commonMetaLabels | object | `{}` |  |
+| controller.affinity | object | `{}` |  |
 | controller.clusterRoleNameOverride | string | `""` |  |
 | controller.command[0] | string | `"/plugin"` |  |
 | controller.configMapOverrideName | string | `""` |  |
 | controller.containerSecurityContext.allowPrivilegeEscalation | bool | `false` |  |
 | controller.containerSecurityContext.capabilities.drop[0] | string | `"ALL"` |  |
+| controller.dnsConfig | object | `{}` |  |
 | controller.emptyDir.sizeLimit | object | `{}` |  |
 | controller.env | list | `[]` |  |
 | controller.extraArgs | object | `{}` |  |
@@ -35,15 +37,21 @@ ArgoCD Substitute Plugin Helm Chart
 | controller.extraVolumeMounts | list | `[]` |  |
 | controller.extraVolumes | list | `[]` |  |
 | controller.fullnameOverride | string | `""` |  |
+| controller.hostAliases | list | `[]` |  |
 | controller.image.digest | string | `""` |  |
 | controller.image.pullPolicy | string | `"IfNotPresent"` |  |
 | controller.image.repository | string | `"ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin"` |  |
 | controller.image.tag | string | `"v1.1.0"` |  |
 | controller.imagePullSecrets | list | `[]` |  |
+| controller.livenessProbe.initialDelaySeconds | int | `15` |  |
+| controller.livenessProbe.periodSeconds | int | `20` |  |
 | controller.name | string | `"controller"` |  |
+| controller.nodeSelector | object | `{}` |  |
 | controller.persistentVolume.enabled | bool | `false` |  |
 | controller.port | string | `"4535"` |  |
 | controller.priorityClassName | string | `""` |  |
+| controller.readinessProbe.initialDelaySeconds | int | `5` |  |
+| controller.readinessProbe.periodSeconds | int | `10` |  |
 | controller.releaseNamespace | bool | `false` |  |
 | controller.resources.limits.cpu | string | `"200m"` |  |
 | controller.resources.limits.memory | string | `"128Mi"` |  |
@@ -69,6 +77,8 @@ ArgoCD Substitute Plugin Helm Chart
 | controller.startupProbe.failureThreshold | int | `30` |  |
 | controller.startupProbe.periodSeconds | int | `5` |  |
 | controller.startupProbe.timeoutSeconds | int | `10` |  |
+| controller.tolerations | list | `[]` |  |
+| controller.topologySpreadConstraints | list | `[]` |  |
 | rbac.create | bool | `true` |  |
 | serviceAccounts.controller.annotations | object | `{}` |  |
 | serviceAccounts.controller.create | bool | `true` |  |

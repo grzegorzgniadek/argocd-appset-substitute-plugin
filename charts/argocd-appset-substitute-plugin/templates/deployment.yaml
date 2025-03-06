@@ -94,11 +94,11 @@ spec:
             tcpSocket:
               port: {{ .Values.controller.port | default "4444" }}
             {{- end }}
-            initialDelaySeconds: {{ .Values.controller.readinessProbeInitialDelay }}
-            periodSeconds: {{ .Values.controller.readinessProbePeriodSeconds }}
-            timeoutSeconds: {{ .Values.controller.readinessProbeTimeout }}
-            failureThreshold: {{ .Values.controller.readinessProbeFailureThreshold }}
-            successThreshold: {{ .Values.controller.readinessProbeSuccessThreshold }}
+            initialDelaySeconds: {{ .Values.controller.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.controller.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.controller.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.controller.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.controller.readinessProbe.successThreshold }}
           livenessProbe:
             {{- if not .Values.controller.tcpSocketProbeEnabled }}
             httpGet:
@@ -113,11 +113,11 @@ spec:
             tcpSocket:
               port: {{ .Values.controller.port | default "4444" }}
             {{- end }}
-            initialDelaySeconds: {{ .Values.controller.livenessProbeInitialDelay }}
-            periodSeconds: {{ .Values.controller.livenessProbePeriodSeconds }}
-            timeoutSeconds: {{ .Values.controller.livenessProbeTimeout }}
-            failureThreshold: {{ .Values.controller.livenessProbeFailureThreshold }}
-            successThreshold: {{ .Values.controller.livenessProbeSuccessThreshold }}
+            initialDelaySeconds: {{ .Values.controller.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.controller.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.controller.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.controller.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.controller.livenessProbe.successThreshold }}
           {{- if .Values.controller.startupProbe.enabled }}
           startupProbe:
             {{- if not .Values.controller.tcpSocketProbeEnabled }}
