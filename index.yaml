@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   argocd-substitute-plugin:
   - apiVersion: v2
+    appVersion: v1.1.0
+    created: "2025-03-06T23:19:44.946658436Z"
+    description: ArgoCD Substitute Plugin Helm Chart
+    digest: a4ebdccfca2541658de88c512ec49fae4e4e5558ef12fd68dd8792cfaa68bd8c
+    name: argocd-substitute-plugin
+    type: application
+    urls:
+    - https://github.com/grzegorzgniadek/argocd-appset-substitute-plugin/releases/download/argocd-substitute-plugin-1.1.0/argocd-substitute-plugin-1.1.0.tgz
+    version: 1.1.0
+  - apiVersion: v2
     appVersion: v1.0.3
     created: "2025-01-04T08:04:03.587763944Z"
     description: ArgoCD Substitute Plugin Helm Chart
@@ -41,4 +51,4 @@ entries:
     urls:
     - https://github.com/grzegorzgniadek/argocd-appset-substitute-plugin/releases/download/argocd-substitute-plugin-0.1.4-rc/argocd-substitute-plugin-0.1.4-rc.tgz
     version: 0.1.4-rc
-generated: "2025-01-04T08:04:03.587789792Z"
+generated: "2025-03-06T23:19:44.946683813Z"
