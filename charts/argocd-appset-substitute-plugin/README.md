@@ -2,7 +2,7 @@
 
 
 
-![Version: 1.2.1](https://img.shields.io/badge/Version-1.2.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.1.0](https://img.shields.io/badge/AppVersion-v1.1.0-informational?style=flat-square) 
+![Version: 1.3.0](https://img.shields.io/badge/Version-1.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.1.0](https://img.shields.io/badge/AppVersion-v1.1.0-informational?style=flat-square) 
 
 ArgoCD Substitute Plugin Helm Chart
 
@@ -25,6 +25,7 @@ ArgoCD Substitute Plugin Helm Chart
 | controller.configMapOverrideName | string | `""` |  |
 | controller.containerSecurityContext.allowPrivilegeEscalation | bool | `false` |  |
 | controller.containerSecurityContext.capabilities.drop[0] | string | `"ALL"` |  |
+| controller.deploymentAnnotations | object | `{}` |  |
 | controller.dnsConfig | object | `{}` |  |
 | controller.emptyDir.sizeLimit | object | `{}` |  |
 | controller.env | list | `[]` |  |
@@ -48,15 +49,20 @@ ArgoCD Substitute Plugin Helm Chart
 | controller.name | string | `"controller"` |  |
 | controller.nodeSelector | object | `{}` |  |
 | controller.persistentVolume.enabled | bool | `false` |  |
+| controller.podAnnotations | object | `{}` |  |
+| controller.podAntiAffinity | object | `{}` |  |
+| controller.podLabels | object | `{}` |  |
 | controller.port | string | `"4535"` |  |
 | controller.priorityClassName | string | `""` |  |
 | controller.readinessProbe.initialDelaySeconds | int | `5` |  |
 | controller.readinessProbe.periodSeconds | int | `10` |  |
 | controller.releaseNamespace | bool | `false` |  |
+| controller.replicaCount | int | `1` |  |
 | controller.resources.limits.cpu | string | `"200m"` |  |
 | controller.resources.limits.memory | string | `"128Mi"` |  |
 | controller.resources.requests.cpu | string | `"10m"` |  |
 | controller.resources.requests.memory | string | `"64Mi"` |  |
+| controller.schedulerName | string | `""` |  |
 | controller.secret.token | string | `""` |  |
 | controller.securityContext.runAsNonRoot | bool | `true` |  |
 | controller.service.additionalPorts | list | `[]` |  |

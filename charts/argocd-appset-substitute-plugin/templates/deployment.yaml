@@ -14,45 +14,45 @@ spec:
     matchLabels:
       {{- include "argocd-appset-substitute-plugin.controller.matchLabels" . | nindent 6 }}
   replicas: {{ .Values.controller.replicaCount }}
-  revisionHistoryLimit: {{ .Values.controller.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ .Values.controller.revisionHistoryLimit | default 10 }}
   {{- if .Values.controller.strategy }}
   strategy:
-{{ toYaml .Values.controller.strategy | trim | indent 4 }}
+    {{- toYaml .Values.controller.strategy | trim | nindent 4 }}
     {{ if eq .Values.controller.strategy.type "Recreate" }}rollingUpdate: null{{ end }}
-{{- end }}
+  {{- end }}
   template:
     metadata:
     {{- if .Values.controller.podAnnotations }}
       annotations:
-        {{ toYaml .Values.controller.podAnnotations | nindent 8 }}
+        {{- toYaml .Values.controller.podAnnotations | nindent 8 }}
     {{- end }}
       labels:
         {{- include "argocd-appset-substitute-plugin.controller.labels" . | nindent 8 }}
-        {{- if .Values.controller.podLabels}}
-        {{ toYaml .Values.controller.podLabels | nindent 8 }}
+        {{- if .Values.controller.podLabels }}
+          {{- toYaml .Values.controller.podLabels | nindent 8 }}
         {{- end}}
     spec:
-{{- if .Values.controller.priorityClassName }}
+    {{- if .Values.controller.priorityClassName }}
       priorityClassName: "{{ .Values.controller.priorityClassName }}"
-{{- end }}
-{{- if .Values.controller.schedulerName }}
+    {{- end }}
+    {{- if .Values.controller.schedulerName }}
       schedulerName: "{{ .Values.controller.schedulerName }}"
-{{- end }}
-{{- if semverCompare ">=1.13-0" .Capabilities.KubeVersion.GitVersion }}
+    {{- end }}
+    {{- if semverCompare ">=1.13-0" .Capabilities.KubeVersion.GitVersion }}
       {{- if or (.Values.controller.enableServiceLinks) (eq (.Values.controller.enableServiceLinks | toString) "<nil>") }}
       enableServiceLinks: true
       {{- else }}
       enableServiceLinks: false
       {{- end }}
-{{- end }}
+    {{- end }}
       serviceAccountName: {{ template "argocd-appset-substitute-plugin.serviceAccountName.controller" . }}
-{{- if kindIs "bool" .Values.controller.automountServiceAccountToken }}
+    {{- if kindIs "bool" .Values.controller.automountServiceAccountToken }}
       automountServiceAccountToken: {{ .Values.controller.automountServiceAccountToken }}
-{{- end }}
-      {{- if .Values.controller.extraInitContainers }}
+    {{- end }}
+    {{- if .Values.controller.extraInitContainers }}
       initContainers:
-{{ toYaml .Values.controller.extraInitContainers | indent 8 }}
-      {{- end }}
+      {{- toYaml .Values.controller.extraInitContainers | nindent 8 }}
+    {{- end }}
       containers:
         - name: {{ template "argocd-appset-substitute-plugin.name" . }}-{{ .Values.controller.name }}
           {{- if .Values.controller.image.digest }}
@@ -67,7 +67,7 @@ spec:
           {{- end }}
           {{- if .Values.controller.env }}
           env:
-{{ toYaml .Values.controller.env | indent 12}}
+            {{- toYaml .Values.controller.env | nindent 12}}
           {{- end }}
           envFrom:
           - secretRef:
@@ -88,7 +88,7 @@ spec:
               scheme: {{ .Values.controller.probeScheme }}
               {{- with .Values.controller.probeHeaders }}
               httpHeaders:
-{{- toYaml . | nindent 14 }}
+                {{- toYaml . | nindent 14 }}
               {{- end }}
             {{- else }}
             tcpSocket:
@@ -107,7 +107,7 @@ spec:
               scheme: {{ .Values.controller.probeScheme }}
               {{- with .Values.controller.probeHeaders }}
               httpHeaders:
-{{- toYaml . | nindent 14 }}
+                {{- toYaml . | nindent 14 }}
               {{- end }}
             {{- else }}
             tcpSocket:
@@ -164,7 +164,7 @@ spec:
               readOnly: {{ .readOnly }}
           {{- end }}
           {{- if .Values.controller.extraVolumeMounts }}
-            {{ toYaml .Values.controller.extraVolumeMounts | nindent 12 }}
+            {{- toYaml .Values.controller.extraVolumeMounts | nindent 12 }}
           {{- end }}
           {{- with .Values.controller.containerSecurityContext }}
           securityContext:
@@ -188,19 +188,19 @@ spec:
     {{- end }}
     {{- if .Values.controller.imagePullSecrets }}
       imagePullSecrets:
-{{ toYaml .Values.controller.imagePullSecrets | indent 8 }}
+        {{- toYaml .Values.controller.imagePullSecrets | nindent 8 }}
     {{- end }}
     {{- if .Values.controller.nodeSelector }}
       nodeSelector:
-{{ toYaml .Values.controller.nodeSelector | indent 8 }}
+        {{- toYaml .Values.controller.nodeSelector | nindent 8 }}
     {{- end }}
     {{- if .Values.controller.hostAliases }}
       hostAliases:
-{{ toYaml .Values.controller.hostAliases | indent 8 }}
+        {{- toYaml .Values.controller.hostAliases | nindent 8 }}
     {{- end }}
     {{- if .Values.controller.dnsConfig }}
       dnsConfig:
-{{ toYaml .Values.controller.dnsConfig | indent 8 }}
+        {{- toYaml .Values.controller.dnsConfig | nindent 8 }}
     {{- end }}
     {{- with .Values.controller.securityContext }}
       securityContext:
@@ -208,13 +208,13 @@ spec:
     {{- end }}
     {{- if .Values.controller.tolerations }}
       tolerations:
-{{ toYaml .Values.controller.tolerations | indent 8 }}
+        {{- toYaml .Values.controller.tolerations | nindent 8 }}
     {{- end }}
     {{- if or .Values.controller.affinity .Values.controller.podAntiAffinity }}
       affinity:
     {{- end }}
       {{- with .Values.controller.affinity }}
-      {{- toYaml . | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
     {{- with .Values.controller.topologySpreadConstraints }}
       topologySpreadConstraints:
@@ -240,9 +240,9 @@ spec:
             optional: {{ . }}
             {{- end }}
       {{- end }}
-{{- if .Values.controller.extraVolumes }}
-{{ toYaml .Values.controller.extraVolumes | indent 8}}
-{{- end }}
+      {{- if .Values.controller.extraVolumes }}
+        {{- toYaml .Values.controller.extraVolumes | nindent 8}}
+      {{- end }}
         - name: storage-volume
         {{- if .Values.controller.persistentVolume.enabled }}
           persistentVolumeClaim:
