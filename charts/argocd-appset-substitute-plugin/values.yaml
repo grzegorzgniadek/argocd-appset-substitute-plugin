@@ -10,11 +10,13 @@ commonMetaLabels: {}
 controller:
   name: controller
   port: "4535"
-  clusterRoleNameOverride: ""
-  releaseNamespace: false
-  sidecarContainers: {}
-  sidecarTemplateValues: {}
-  imagePullSecrets: []
+  deploymentAnnotations: {}
+  replicaCount: 1
+  podAnnotations: {}
+  podLabels: {}
+  priorityClassName: ""
+  schedulerName: ""
+  extraInitContainers: []
   image:
     repository: ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin
     digest: ""
@@ -22,10 +24,31 @@ controller:
     tag: v1.1.0
   command:
     - /plugin
-  priorityClassName: ""
   env: []
+  startupProbe:
+    enabled: false
+    periodSeconds: 5
+    failureThreshold: 30
+    timeoutSeconds: 10
+  readinessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  livenessProbe:
+    initialDelaySeconds: 15
+    periodSeconds: 20
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 64Mi
+  clusterRoleNameOverride: ""
+  releaseNamespace: false
+  sidecarContainers: {}
+  sidecarTemplateValues: {}
+  imagePullSecrets: []
   extraArgs: {}
-  extraInitContainers: []
   extraVolumeMounts: []
   extraVolumes: []
   extraHostPathMounts: []
@@ -34,22 +57,10 @@ controller:
   configMapOverrideName: ""
   extraConfigmapLabels: {}
   fullnameOverride: ""
-  startupProbe:
-    enabled: false
-    periodSeconds: 5
-    failureThreshold: 30
-    timeoutSeconds: 10
   persistentVolume:
     enabled: false
   emptyDir:
     sizeLimit: {}
-  resources:
-    limits:
-      cpu: 200m
-      memory: 128Mi
-    requests:
-      cpu: 10m
-      memory: 64Mi
   securityContext:
     runAsNonRoot: true
   containerSecurityContext:
@@ -60,19 +71,12 @@ controller:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  podAntiAffinity: {}
   hostAliases: []
   dnsConfig: {}
   topologySpreadConstraints: []
-  readinessProbe:
-    initialDelaySeconds: 5
-    periodSeconds: 10
-  livenessProbe:
-    initialDelaySeconds: 15
-    periodSeconds: 20
-
   secret:
     token: ""
-
   service:
     enabled: true
     annotations: {}

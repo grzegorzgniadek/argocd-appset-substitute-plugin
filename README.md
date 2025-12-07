@@ -29,6 +29,7 @@ argocd-substitute-plugin-59db98964b-ljpvt              1m           6Mi
 1. Install argocd-appset-substitute-plugin's Helm chart from [charts](https://grzegorzgniadek.github.io/argocd-appset-substitute-plugin/) repository:
 
 ```bash
+helm repo add argocd-appset-substitute-plugin https://grzegorzgniadek.github.io/argocd-appset-substitute-plugin
 helm upgrade --install \
     --namespace argocd \
      argocd-substitute-plugin argocd-substitute-plugin \
@@ -47,10 +48,13 @@ helm template --namespace argocd \
 kubectl apply -f /tmp/plugin.yaml --namespace argocd
 ```
 
+## Installation with GitOps(ArgoCD)
+You can use ArgoCD as installation
+[Installation Manifest](https://github.com/grzegorzgniadek/argocd-appset-substitute-plugin/blob/master/charts/argocd-appset-substitute-plugin/examples/install/argocd-appplication.yaml)
+
 ## Configuration and customization
 
 You can see the full list of parameters (along with their meaning and default values) in the chart's [values.yaml](https://github.com/grzegorzgniadek/argocd-appset-substitute-plugin/blob/master/charts/argocd-appset-substitute-plugin/values.yaml) file.
-
 
 #### Customize resources
 
@@ -64,9 +68,9 @@ helm upgrade --install \
 
 ## Use sample resource
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/grzegorzgniadek/argocd-appset-substitute-plugin/refs/heads/master/examples/applicationset.yaml
 kubectl apply -f https://raw.githubusercontent.com/grzegorzgniadek/argocd-appset-substitute-plugin/refs/heads/master/examples/configmap.yaml
 kubectl apply -f https://raw.githubusercontent.com/grzegorzgniadek/argocd-appset-substitute-plugin/refs/heads/master/examples/secret.yaml
+kubectl apply -f https://raw.githubusercontent.com/grzegorzgniadek/argocd-appset-substitute-plugin/refs/heads/master/examples/applicationset.yaml
 ```
 
 ## Delete sample resource
