@@ -1,9 +1,7 @@
 # Image URL to use all building/pushing image targets
 
-TAG=$(shell curl  "https://api.github.com/repos/grzegorzgniadek/argocd-appset-substitute-plugin/tags" | jq -r '.[0].name')
-
-BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
-HELM_VERSION=$(shell bash semver.sh -b $(BRANCH) -helm -q )
+HELM_VERSION=$(shell bash semver.sh -b master -q -helm )
+TAG=$(shell bash semver.sh -b master -q)
 
 IMG ?= ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin:$(TAG)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
