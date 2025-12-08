@@ -35,7 +35,7 @@ COMMIT=$(git show -s --format=%B)
 COMMIT=$(echo "$COMMIT" | tr '[:upper:]' '[:lower:]')
 
 MAJOR_MATCH="(major|breaking)[:|\/|\(]"
-MINOR_MATCH="feat[:|\/|\(]"
+MINOR_MATCH="(feat|chore)[:|\/|\(]"
 PATCH_MATCH="fix[:|\/|\(]"
 
 [[ $USE_LATEST_TAG == "true" ]] && OLD_VERSION=$(git tag -l 'v*.*.*'| sort -V | tail -n 1)
@@ -57,16 +57,28 @@ else
   PATCH=$(sed 's:^[0-9]*\.[0-9]*\.\([0-9]*\).*$:\1:' <<<"$OLD_VERSION")
 
   if [[ $COMMIT =~ $MAJOR_MATCH ]]; then
-    MAJOR=$((MAJOR + 1))
+    if [[ $HELM != "true" ]]; then
+      MAJOR=$((MAJOR + 1))
+    else
+      MAJOR=$((MAJOR + 2))
+    fi
     MINOR="0"
     PATCH="0"
 
   elif [[ $COMMIT =~ $MINOR_MATCH ]]; then
-    MINOR=$((MINOR + 1))
+    if [[ $HELM != "true" ]]; then
+      MINOR=$((MINOR + 1))
+    else
+      MINOR=$((MINOR + 2))
+    fi
     PATCH="0"
 
   elif [[ $COMMIT =~ $PATCH_MATCH ]]; then
-    PATCH=$((PATCH + 1))
+    if [[ $HELM != "true" ]]; then
+      PATCH=$((PATCH + 1))
+    else
+      PATCH=$((PATCH + 2))
+    fi
 
   else
     PATCH=$((PATCH + 1))
