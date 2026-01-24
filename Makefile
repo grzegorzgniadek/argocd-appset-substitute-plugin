@@ -23,6 +23,10 @@ CONTAINER_TOOL ?= docker
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
+KIND ?= kind
+HELM ?= helm
+KUBECTL ?= kubectl
+
 .PHONY: all
 all: build
 
@@ -136,6 +140,30 @@ $(HELMDOCS): $(LOCALBIN) ## Download helm-docs locally if necessary.
 LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
+
+##@ E2E Tests
+.PHONY: kind-create-cluster
+kind-create-cluster: ## Create kind cluster for e2e tests
+	if ! $(KIND) get clusters | grep -q 'e2e'; then \
+		$(KIND) create cluster --name e2e; \
+	else \
+		echo "Kind cluster 'e2e' already exists"; \
+	fi
+
+.PHONY: kind-load-image
+kind-load-image: ## Load plugin image into kind cluster
+	kind load docker-image $(IMG) --name e2e
+
+.PHONY: kind-testing
+kind-testing: docker-build kind-create-cluster kind-load-image ## Run e2e tests
+	$(HELM) upgrade --install argocd argo-cd --namespace argocd --create-namespace --repo https://argoproj.github.io/argo-helm/
+	$(HELM) upgrade --install argocd-substitute-plugin --namespace argocd charts/argocd-appset-substitute-plugin/
+	$(KUBECTL) apply -f examples
+	$(KUBECTL) get cm -n default cluster-vars -o yaml | yq .data
+
+.PHONY: kind-delete-cluster
+kind-delete-cluster: ## Delete kind cluster after e2e tests
+	kind delete cluster --name e2e
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary (ideally with version)
