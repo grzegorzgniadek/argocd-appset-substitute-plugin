@@ -34,22 +34,49 @@ jobs:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
+  check-charts:
+    name: Check Charts Changed
+    runs-on: ubuntu-latest
+    needs:
+    - version
+    - e2e-tests
+    outputs:
+      charts_changed: ${{ steps.check.outputs.charts_changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect charts/ changes
+        id: check
+        run: |
+          git fetch --no-tags --prune origin || true
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} -- charts || true)
+          if [ -n "$CHANGED" ]; then
+            echo "charts_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "charts_changed=false" >> $GITHUB_OUTPUT
+          fi
+
   release-charts:
     name: Release Charts
     uses: ./.github/workflows/release-charts-call.yaml
     needs:
     - version
     - e2e-tests
-    if: needs.version.outputs.version != 'none'
+    - check-charts
+    if: needs.version.outputs.version != 'none' && needs.check-charts.outputs.charts_changed == 'true'
     secrets: inherit
 
   tagging:
-    if: startsWith(needs.version.outputs.version, 'v')
+    if: startsWith(needs.version.outputs.version, 'v') && needs.check-charts.outputs.charts_changed == 'false'
     name: Tagging
     uses: ./.github/workflows/tagging.yaml
     needs:
     - version
     - e2e-tests
+    - check-charts
     with:
       source: ${{ github.event.after }}
       tag: ${{ needs.version.outputs.version }}
