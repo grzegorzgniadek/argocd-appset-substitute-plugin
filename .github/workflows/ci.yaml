@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - dev
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  version:
+    name: Version
+    uses: ./.github/workflows/version-call.yaml
+
+  e2e-tests:
+    name: E2E Tests
+    uses: ./.github/workflows/e2e-tests-call.yaml
+    needs:
+    - version
+    with:
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  build-container:
+    name: Build Container
+    uses: ./.github/workflows/build-container-call.yaml
+    needs:
+    - version
+    - e2e-tests
+    with:
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  check-charts:
+    name: Check Charts Changed
+    runs-on: ubuntu-latest
+    needs:
+    - version
+    - e2e-tests
+    outputs:
+      charts_changed: ${{ steps.check.outputs.charts_changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect charts/ changes
+        id: check
+        run: |
+          git fetch --no-tags --prune origin || true
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} -- charts || true)
+          if [ -n "$CHANGED" ]; then
+            echo "charts_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "charts_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+  release-charts:
+    name: Release Charts
+    uses: ./.github/workflows/release-charts-call.yaml
+    needs:
+    - version
+    - e2e-tests
+    - check-charts
+    if: needs.version.outputs.version != 'none' && needs.check-charts.outputs.charts_changed == 'true'
+    secrets: inherit
+
+  tagging:
+    if: startsWith(needs.version.outputs.version, 'v') && needs.check-charts.outputs.charts_changed == 'false'
+    name: Tagging
+    uses: ./.github/workflows/tagging-call.yaml
+    needs:
+    - version
+    - e2e-tests
+    - check-charts
+    with:
+      source: ${{ github.event.after }}
+      tag: ${{ needs.version.outputs.version }}
+      create-release: ${{ startsWith(needs.version.outputs.version, 'v') }}
+      prerelease: ${{ endsWith(needs.version.outputs.version, 'rc') }}
+    secrets: inherit

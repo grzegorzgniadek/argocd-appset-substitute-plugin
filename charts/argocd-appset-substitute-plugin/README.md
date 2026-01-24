@@ -2,7 +2,7 @@
 
 
 
-![Version: 1.6.0](https://img.shields.io/badge/Version-1.6.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.5.0](https://img.shields.io/badge/AppVersion-v1.5.0-informational?style=flat-square) 
+![Version: 1.7.0](https://img.shields.io/badge/Version-1.7.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.6.0](https://img.shields.io/badge/AppVersion-v1.6.0-informational?style=flat-square) 
 
 ArgoCD Substitute Plugin Helm Chart
 
@@ -42,7 +42,7 @@ ArgoCD Substitute Plugin Helm Chart
 | controller.image.digest | string | `""` |  |
 | controller.image.pullPolicy | string | `"IfNotPresent"` |  |
 | controller.image.repository | string | `"ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin"` |  |
-| controller.image.tag | string | `"v1.5.0"` |  |
+| controller.image.tag | string | `"v1.6.0"` |  |
 | controller.imagePullSecrets | list | `[]` |  |
 | controller.livenessProbe.initialDelaySeconds | int | `15` |  |
 | controller.livenessProbe.periodSeconds | int | `20` |  |
