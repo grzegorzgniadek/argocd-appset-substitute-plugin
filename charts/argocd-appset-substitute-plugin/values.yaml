@@ -21,7 +21,7 @@ controller:
     repository: ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin
     digest: ""
     pullPolicy: IfNotPresent
-    tag: "v1.3.0"
+    tag: "v1.4.0"
   command:
     - /plugin
   env: []
