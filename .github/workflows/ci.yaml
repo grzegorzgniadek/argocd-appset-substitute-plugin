@@ -42,6 +42,7 @@ jobs:
     - e2e-tests
     outputs:
       charts_changed: ${{ steps.check.outputs.charts_changed }}
+      non_charts_changed: ${{ steps.check.outputs.non_charts_changed }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -52,11 +53,18 @@ jobs:
         id: check
         run: |
           git fetch --no-tags --prune origin || true
-          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} -- charts || true)
-          if [ -n "$CHANGED" ]; then
+          ALL_CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} || true)
+
+          if echo "$ALL_CHANGED" | grep -q '^charts/'; then
             echo "charts_changed=true" >> $GITHUB_OUTPUT
           else
             echo "charts_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$ALL_CHANGED" | grep -qv '^charts/'; then
+            echo "non_charts_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "non_charts_changed=false" >> $GITHUB_OUTPUT
           fi
 
   release-charts:
@@ -70,7 +78,7 @@ jobs:
     secrets: inherit
 
   tagging:
-    if: startsWith(needs.version.outputs.version, 'v') && needs.check-charts.outputs.charts_changed == 'false'
+    if: startsWith(needs.version.outputs.version, 'v') && needs.check-charts.outputs.non_charts_changed == 'true'
     name: Tagging
     uses: ./.github/workflows/tagging-call.yaml
     needs:
