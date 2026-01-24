@@ -1,7 +1,7 @@
 # Image URL to use all building/pushing image targets
 
-HELM_VERSION=$(shell bash semver.sh -b master -q -helm )
-TAG=$(shell bash semver.sh -b master -q)
+HELM_VERSION ?=$(shell bash semver.sh -b master -q -helm )
+TAG ?= $(shell bash semver.sh -b master -q)
 
 IMG ?= ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin:$(TAG)
 
@@ -156,10 +156,11 @@ kind-load-image: ## Load plugin image into kind cluster
 	kind load docker-image $(IMG) --name e2e
 
 .PHONY: kind-testing
-kind-testing: docker-build kind-create-cluster kind-load-image  ## Run e2e tests
+kind-testing: helm-replace docker-build kind-create-cluster kind-load-image  ## Run e2e tests
 	$(HELM) upgrade --install argocd argo-cd --namespace argocd --create-namespace --repo https://argoproj.github.io/argo-helm/ --wait
 	$(HELM) upgrade --install argocd-substitute-plugin --namespace argocd charts/argocd-appset-substitute-plugin/ --wait
 	$(KUBECTL) apply -f examples
+	@$(KUBECTL) get deploy argocd-substitute-plugin-controller -n argocd -o yaml |grep 'image:'
 	sleep 10
 	$(MAKE) verify-substitution
 	$(MAKE) kind-delete-cluster

@@ -15,7 +15,8 @@ jobs:
   e2e-tests:
     runs-on: ubuntu-latest
     env:
-      IMG: ${{ inputs.version }}
+      TAG: ${{ inputs.version }}
+      HELM_VERSION: ${{ inputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
