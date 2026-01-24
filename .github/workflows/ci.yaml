@@ -13,11 +13,11 @@ permissions:
 jobs:
   version:
     name: Version
-    uses: ./.github/workflows/version.yaml
+    uses: ./.github/workflows/version-call.yaml
 
   e2e-tests:
     name: E2E Tests
-    uses: ./.github/workflows/e2e-tests.yaml
+    uses: ./.github/workflows/e2e-tests-call.yaml
     needs:
     - version
     with:
@@ -26,7 +26,7 @@ jobs:
 
   build-container:
     name: Build Container
-    uses: ./.github/workflows/build-container.yaml
+    uses: ./.github/workflows/build-container-call.yaml
     needs:
     - version
     - e2e-tests
@@ -72,7 +72,7 @@ jobs:
   tagging:
     if: startsWith(needs.version.outputs.version, 'v') && needs.check-charts.outputs.charts_changed == 'false'
     name: Tagging
-    uses: ./.github/workflows/tagging.yaml
+    uses: ./.github/workflows/tagging-call.yaml
     needs:
     - version
     - e2e-tests
