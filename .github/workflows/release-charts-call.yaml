@@ -1,4 +1,6 @@
 name: Release Charts
+on:
+  workflow_call:
 
 jobs:
   release:
