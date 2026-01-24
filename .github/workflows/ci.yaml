@@ -29,6 +29,7 @@ jobs:
     uses: ./.github/workflows/build-container.yaml
     needs:
     - version
+    - e2e-tests
     with:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
@@ -38,6 +39,7 @@ jobs:
     uses: ./.github/workflows/release-charts-call.yaml
     needs:
     - version
+    - e2e-tests
     if: needs.version.outputs.version != 'none'
     secrets: inherit
 
@@ -47,6 +49,7 @@ jobs:
     uses: ./.github/workflows/tagging.yaml
     needs:
     - version
+    - e2e-tests
     with:
       source: ${{ github.event.after }}
       tag: ${{ needs.version.outputs.version }}
