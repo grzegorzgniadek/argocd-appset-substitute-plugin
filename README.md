@@ -50,7 +50,7 @@ kubectl apply -f /tmp/plugin.yaml --namespace argocd
 
 ## Installation with GitOps(ArgoCD)
 You can use ArgoCD as installation
-[Installation Manifest](https://github.com/grzegorzgniadek/argocd-appset-substitute-plugin/blob/master/charts/argocd-appset-substitute-plugin/examples/install/argocd-appplication.yaml)
+[Installation Manifest](https://github.com/grzegorzgniadek/argocd-appset-substitute-plugin/blob/master/examples/install/argocd-appplication.yaml)
 
 ## Configuration and customization
 
