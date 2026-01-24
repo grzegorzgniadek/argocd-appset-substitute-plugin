@@ -39,10 +39,10 @@ spec:
         helm:
           releaseName: podinfo
           valuesObject:
-            something: "{{ .MACHINE_ARN }}"
-            nextsomething: "{{ .WAF_ARN }}"
-            nextnextsomething: "{{ .something2 }}"
-            nextnextnextsomething: "{{ .something_bla }}"
+            MACHINE_ARN: "{{ .MACHINE_ARN }}"
+            WAF_ARN: "{{ .WAF_ARN }}"
+            DATABASE_NAME: "{{ .DATABASE_NAME }}"
+            APP_NAME: "{{ .APP_NAME }}"
       destination:
         server: https://kubernetes.default.svc
         namespace: default
