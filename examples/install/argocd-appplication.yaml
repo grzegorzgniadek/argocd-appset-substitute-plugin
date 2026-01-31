@@ -18,7 +18,7 @@ spec:
   sources:
     - chart: argocd-substitute-plugin
       repoURL: https://grzegorzgniadek.github.io/argocd-appset-substitute-plugin
-      targetRevision: "1.5.2"
+      targetRevision: "1.5.5"
   syncPolicy:
     automated:
       prune: true

@@ -27,4 +27,4 @@ repos:
         entry: make helm
         language: system
         types: [file]
-        files: ^charts/
+        files: ^charts/|^examples/
