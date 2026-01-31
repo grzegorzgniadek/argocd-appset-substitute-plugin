@@ -15,6 +15,11 @@ repos:
         args:
           - --chart-search-root=charts
           - --template-files=charts/_templates.gotmpl
+  - repo: https://github.com/renovatebot/pre-commit-hooks
+    rev: 43.0.6
+    hooks:
+      - id: renovate-config-validator
+        args: [--strict]
   - repo: local
     hooks:
       - id: make-helm
