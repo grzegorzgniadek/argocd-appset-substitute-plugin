@@ -7,7 +7,8 @@
   "assignees" : [
     "grzegorzgniadek"
   ],
-    "lockFileMaintenance": {
+  "lockFileMaintenance": {
     "enabled": true
-  }
+  },
+  "schedule": ["* 18-21 * * *"]
 }
