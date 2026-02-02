@@ -55,13 +55,13 @@ jobs:
           git fetch --no-tags --prune origin || true
           ALL_CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} || true)
 
-          if echo "$ALL_CHANGED" | grep -qE '^charts/|examples/'; then
+          if echo "$ALL_CHANGED" | grep -qE '^charts/|^examples/'; then
             echo "charts_changed=true" >> $GITHUB_OUTPUT
           else
             echo "charts_changed=false" >> $GITHUB_OUTPUT
           fi
 
-          if echo "$ALL_CHANGED" | grep -qvE '^charts/|examples/'; then
+          if echo "$ALL_CHANGED" | grep -qvE '^charts/|^examples/'; then
             echo "non_charts_changed=true" >> $GITHUB_OUTPUT
           else
             echo "non_charts_changed=false" >> $GITHUB_OUTPUT
