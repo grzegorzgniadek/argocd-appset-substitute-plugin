@@ -24,16 +24,6 @@ jobs:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
-  build-container:
-    name: Build Container
-    uses: ./.github/workflows/build-container-call.yaml
-    needs:
-    - version
-    - e2e-tests
-    with:
-      version: ${{ needs.version.outputs.version }}
-    secrets: inherit
-
   check-charts:
     name: Check Charts Changed
     runs-on: ubuntu-latest
@@ -90,4 +80,16 @@ jobs:
       tag: ${{ needs.version.outputs.version }}
       create-release: ${{ startsWith(needs.version.outputs.version, 'v') }}
       prerelease: ${{ endsWith(needs.version.outputs.version, 'rc') }}
+    secrets: inherit
+
+  build-container:
+    if: startsWith(needs.version.outputs.version, 'v') && needs.check-charts.outputs.non_charts_changed == 'true'
+    name: Build Container
+    uses: ./.github/workflows/build-container-call.yaml
+    needs:
+    - version
+    - e2e-tests
+    - check-charts
+    with:
+      version: ${{ needs.version.outputs.version }}
     secrets: inherit
