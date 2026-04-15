@@ -1,4 +1,4 @@
-name: "Calculate version (reusable)"
+name: "X. Calculate version (reusable)"
 
 on:
   workflow_call:

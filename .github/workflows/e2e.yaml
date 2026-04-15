@@ -10,15 +10,9 @@ permissions:
   packages: write
 
 jobs:
-  version:
-    name: Version
-    uses: ./.github/workflows/version-call.yaml
-
   e2e-tests:
     name: E2E Tests
     uses: ./.github/workflows/e2e-tests-call.yaml
-    needs:
-    - version
     with:
-      version: ${{ needs.version.outputs.version }}
+      version: v0.0.0
     secrets: inherit
