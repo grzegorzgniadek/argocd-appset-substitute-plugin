@@ -57,28 +57,16 @@ else
   PATCH=$(sed 's:^[0-9]*\.[0-9]*\.\([0-9]*\).*$:\1:' <<<"$OLD_VERSION")
 
   if [[ $COMMIT =~ $MAJOR_MATCH ]]; then
-    if [[ $HELM != "true" ]]; then
-      MAJOR=$((MAJOR + 1))
-    else
-      MAJOR=$((MAJOR + 2))
-    fi
+    MAJOR=$((MAJOR + 1))
     MINOR="0"
     PATCH="0"
 
   elif [[ $COMMIT =~ $MINOR_MATCH ]]; then
-    if [[ $HELM != "true" ]]; then
-      MINOR=$((MINOR + 1))
-    else
-      MINOR=$((MINOR + 2))
-    fi
+    MINOR=$((MINOR + 1))
     PATCH="0"
 
   elif [[ $COMMIT =~ $PATCH_MATCH ]]; then
-    if [[ $HELM != "true" ]]; then
-      PATCH=$((PATCH + 1))
-    else
-      PATCH=$((PATCH + 2))
-    fi
+    PATCH=$((PATCH + 1))
 
   else
     PATCH=$((PATCH + 1))
@@ -100,4 +88,3 @@ fi
 [[ ! $VERSION_ONLY == "true" ]] && echo "Old version: v$OLD_VERSION"
 [[ ! $VERSION_ONLY == "true" ]] && echo "New version: $VERSION"
 exit 0
-
