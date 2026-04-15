@@ -34,7 +34,7 @@ jobs:
       non_charts_changed: ${{ steps.check.outputs.non_charts_changed }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
