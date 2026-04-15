@@ -1,0 +1,24 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  version:
+    name: Version
+    uses: ./.github/workflows/version-call.yaml
+
+  e2e-tests:
+    name: E2E Tests
+    uses: ./.github/workflows/e2e-tests-call.yaml
+    needs:
+    - version
+    with:
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
