@@ -19,7 +19,7 @@ jobs:
       HELM_VERSION: ${{ inputs.version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1
