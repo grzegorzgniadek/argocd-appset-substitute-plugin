@@ -1,0 +1,26 @@
+name: "Github Conventions"
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
+
+permissions:
+  pull-requests: write
+
+jobs:
+  pr_title:
+    name: "Pull Request Title Check"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Pull Request Title
+        uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 #v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          ignoreLabels: | 
+            bot
+            ignore-semantic-pull-request

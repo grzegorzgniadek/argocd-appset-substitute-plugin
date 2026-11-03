@@ -1,0 +1,31 @@
+name: Create chore/updates branch
+
+on:
+  pull_request:
+    branches: [master]
+    types: [closed]
+
+concurrency:
+  group: create-update-branch
+  cancel-in-progress: false
+
+jobs:
+  recreate:
+    # Only when a PR from chore/updates (same repo) was actually merged
+    if: >
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.ref == 'chore/updates' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # for git push
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+        with:
+          ref: master
+
+      - name: Recreate chore/updates from master
+        run: |
+          set -euo pipefail
+          # Branch is usually auto-deleted on merge; if it still exists, reset it to master
+          git push --force origin "HEAD:refs/heads/chore/updates"

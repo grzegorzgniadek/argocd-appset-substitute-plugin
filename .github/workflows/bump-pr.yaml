@@ -1,0 +1,83 @@
+name: Version
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, edited, synchronize, reopened, closed]
+
+concurrency:
+  group: version-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  lint-title:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 #v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  bump:
+    needs: lint-title
+    # Skip closed events and fork PRs (read-only token on forks)
+    if: >
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0 # needed to see all tags and the base branch
+
+      - name: Set VERSION from latest tag + PR title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+
+          # Latest semver tag already merged into the base branch
+          LATEST=$(git tag --merged "origin/${BASE_REF}" --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1)
+          LATEST=${LATEST:-v0.0.0}
+          IFS=. read -r MAJOR MINOR PATCH <<< "${LATEST#v}"
+
+          if echo "$TITLE" | grep -qE '^[a-z]+(\([^)]*\))?!:'; then
+            MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0
+          elif echo "$TITLE" | grep -qE '^feat(\(|:)'; then
+            MINOR=$((MINOR+1)); PATCH=0
+          elif echo "$TITLE" | grep -qE '^(fix|deps|chore|ci|build|docs|style|test|refactor)(\(|:)'; then
+            PATCH=$((PATCH+1))
+          fi
+          # otherwise: no release, keep the latest tag's version
+
+          NEW="${MAJOR}.${MINOR}.${PATCH}"
+          CURRENT=$(cat VERSION 2>/dev/null | tr -d '[:space:]' || true)
+
+          echo "Latest tag: $LATEST | PR title: $TITLE | VERSION: ${CURRENT:-<none>} -> $NEW"
+
+          if [ "$NEW" = "$CURRENT" ]; then
+            echo "VERSION already $NEW, nothing to do"
+          else
+            echo "Updating VERSION to $NEW"
+            echo "$NEW" > VERSION
+          fi
+
+          make release
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "There are changes"
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .
+            git commit -m "chore: set version to $NEW"
+            git push origin "HEAD:${HEAD_REF}"
+          else
+            echo "Working tree clean"
+            exit 0
+          fi

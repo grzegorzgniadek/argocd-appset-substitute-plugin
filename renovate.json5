@@ -4,11 +4,45 @@
     "config:recommended"
   ],
   "timezone": "Europe/Warsaw",
-  "assignees" : [
+  "assignees": [
     "grzegorzgniadek"
   ],
-  "lockFileMaintenance": {
-    "enabled": true
-  },
-  "schedule": ["* 18-21 * * *"]
+  "schedule": ["* 18-21 * * *"],
+  "postUpdateOptions": [
+    "gomodTidy",
+    "gomodUpdateImportPaths"
+  ],
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+  "customManagers": [
+    {
+      "description": "Go version mentioned in CONTRIBUTING.md prerequisites",
+      "customType": "regex",
+      "managerFilePatterns": ["/^CONTRIBUTING\\.md$/"],
+      "matchStrings": ["go version v(?<currentValue>\\d+\\.\\d+\\.\\d+)\\+"],
+      "depNameTemplate": "go",
+      "datasourceTemplate": "golang-version"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "All Go module updates in one PR",
+      "matchManagers": ["gomod"],
+      "groupName": "go dependencies"
+    },
+    {
+      "description": "Bump the `go` directive in go.mod (Renovate only does this with rangeStrategy=bump)",
+      "matchDatasources": ["golang-version"],
+      "matchPackageNames": ["go"],
+      "rangeStrategy": "bump"
+    },
+    {
+      "description": "Go toolchain: go.mod `go` directive + golang images (Dockerfile, devcontainer) + CONTRIBUTING.md in one PR",
+      "matchPackageNames": ["go", "golang"],
+      "matchDatasources": ["golang-version", "docker"],
+      "groupName": "golang",
+      "groupSlug": "golang"
+    }
+  ]
 }
