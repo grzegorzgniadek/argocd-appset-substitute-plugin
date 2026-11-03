@@ -1,0 +1,76 @@
+name: Release Charts
+
+on:
+  push:
+    paths:
+    - 'charts/**'
+    branches:
+    - master
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION_DEV: ${{ steps.read_version.outputs.VERSION_DEV }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+
+      - name: Read VERSION file
+        id: read_version
+        run: |
+          if grep -q "rc" VERSION ; then
+            echo "VERSION_DEV=true" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION_DEV=false" >> $GITHUB_OUTPUT
+          fi
+
+  release:
+    needs: [check-version]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 #v5.0.1
+        with:
+          version: 4.3.1
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@cae68fefc6b5f367a0275617c9f83181ba54714f #v1.7.0
+        with:
+          mark_as_latest: true
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          CR_GENERATE_RELEASE_NOTES: true
+          CR_SKIP_EXISTING: true
+          CR_RELEASE_NAME_TEMPLATE: "interpolator-{{ .Version }}"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f #v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Charts to GHCR
+        run: |
+          for pkg in .cr-release-packages/*; do
+            if [ -z "${pkg:-}" ]; then
+              break
+            fi
+
+            helm push "${pkg}" oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts
+          done

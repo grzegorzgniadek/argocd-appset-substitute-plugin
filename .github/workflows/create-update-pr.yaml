@@ -1,0 +1,46 @@
+name: Create chore/updates PR
+
+on:
+  push:
+    branches: [chore/updates]
+  workflow_dispatch:
+
+concurrency:
+  group: create-update-pr
+  cancel-in-progress: false
+
+jobs:
+  open-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # for gh pr create
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+        with:
+          ref: chore/updates
+          fetch-depth: 0 # needed to compare with master
+
+      - name: Open PR chore/updates -> master
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          AHEAD=$(git rev-list --count origin/master..origin/chore/updates)
+          if [ "$AHEAD" -eq 0 ]; then
+            echo "chore/updates has no commits ahead of master, nothing to do"
+            exit 0
+          fi
+
+          OPEN=$(gh pr list --head chore/updates --base master --state open --json number --jq 'length')
+          if [ "$OPEN" -gt 0 ]; then
+            echo "PR from chore/updates to master already open"
+            exit 0
+          fi
+
+          gh pr create \
+            --head chore/updates \
+            --base master \
+            --title "chore: updates" \
+            --body "Automated PR from \`chore/updates\` to \`master\` ($AHEAD commit(s) ahead)."

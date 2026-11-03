@@ -1,9 +1,11 @@
 # Image URL to use all building/pushing image targets
+TAG=$(shell cat VERSION)
+REPOSITORY ?= ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin
+IMG ?= $(REPOSITORY):v$(TAG)
 
-HELM_VERSION ?=$(shell bash semver.sh -b master -q -helm )
-TAG ?= $(shell bash semver.sh -b master -q)
-
-IMG ?= ghcr.io/grzegorzgniadek/argocd-appset-substitute-plugin:$(TAG)
+# Go Version from go.mod file to use for installing tools. This is used to ensure that the correct version of Go is used when installing tools, regardless of the version of Go installed on the system.
+GO_VERSION := $(shell go list -m -f '{{.GoVersion}}')
+export GOTOOLCHAIN := go$(GO_VERSION)
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -23,8 +25,6 @@ CONTAINER_TOOL ?= docker
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-KIND ?= kind
-HELM ?= helm
 KUBECTL ?= kubectl
 MAKE ?= make
 
@@ -58,16 +58,21 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+.PHONY: lint
+lint: golangci-lint-binary-install ## Run golangci-lint linter
+	"$(GOLANGCI_LINT)" run
+
+.PHONY: lint-fix
+lint-fix: golangci-lint-binary-install ## Run golangci-lint linter and perform fixes
+	"$(GOLANGCI_LINT)" run --fix
+
+.PHONY: lint-config
+lint-config: golangci-lint-binary-install ## Verify golangci-lint linter configuration
+	"$(GOLANGCI_LINT)" config verify
+
 .PHONY: test
 test: ## Run go test against code.
 	go test ./... -v
-
-.PHONY: helm-replace
-helm-replace: ## Replace Version Tag in helm charts values
-	TAG=$(TAG) yq -i '.appVersion = strenv(TAG)' charts/argocd-appset-substitute-plugin/Chart.yaml
-	TAG=$(TAG) yq -i '.controller.image.tag = strenv(TAG)' charts/argocd-appset-substitute-plugin/values.yaml
-	HELM_VERSION=$(HELM_VERSION) yq -i '.version = strenv(HELM_VERSION)' charts/argocd-appset-substitute-plugin/Chart.yaml
-	HELM_VERSION=$(HELM_VERSION) yq -i '.spec.sources[0].targetRevision = strenv(HELM_VERSION)' examples/install/argocd-appplication.yaml
 
 ##@ Build
 
@@ -78,16 +83,6 @@ build: fmt vet ## Build plugin binary.
 .PHONY: run
 run: fmt vet ## Run a plugin from your host.
 	go run ./cmd/main.go
-
-HELMDOCS ?= $(LOCALBIN)/helm-docs
-
-# Create Helm-docs in charts directory
-.PHONY: helm-docs
-helm-docs: helm-docs-install ## Use helm-docs to create chart README.md
-	$(HELMDOCS) --chart-search-root=charts --template-files=charts/_templates.gotmpl
-
-.PHONY: helm
-helm: helm-replace helm-docs-install helm-docs ## Replace TAG with version in helm charts, install helm-docs and use helm-docs to create chart README.md
 
 # If you wish to build the manager image targeting other platforms you can use the --platform flag.
 # (i.e. docker build --platform linux/arm64). However, you must enable docker buildKit for it.
@@ -121,30 +116,62 @@ ifndef ignore-not-found
   ignore-not-found = false
 endif
 
-##@ Deploy
-.PHONY: helm-template
-helm-template: helm-replace helm-docs-install helm-docs ## Run helm-template
-	helm template argocd-substitute-plugin charts/argocd-appset-substitute-plugin -n argocd --debug
-
-.PHONY: helm-install
-helm-install: helm-replace helm-docs-install helm-docs ## Install Helm chart in argocd namespace
-	helm upgrade --install argocd-substitute-plugin charts/argocd-appset-substitute-plugin -n argocd
-
 ##@ Dependencies
-
-.PHONY: helm-docs
-helm-docs-install: $(HELMDOCS) ## Install helm-docs binary.
-$(HELMDOCS): $(LOCALBIN) ## Download helm-docs locally if necessary.
-	test -s $(LOCALBIN)/helm-docs || GOBIN=$(LOCALBIN) go install github.com/norwoodj/helm-docs/cmd/helm-docs@latest
 
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
+## Tool Binaries
+KUBECTL ?= kubectl
+# Use kind from PATH if available, otherwise fall back to bin/kind (installed by kind-install)
+KIND ?= $(or $(shell command -v kind 2>/dev/null),$(LOCALBIN)/kind)
+HELM ?= $(or $(shell command -v helm 2>/dev/null),$(LOCALBIN)/helm)
+GOLANGCI_LINT ?= $(or $(shell command -v golangci-lint 2>/dev/null),$(LOCALBIN)/golangci-lint)
+HELMDOCS ?= $(or $(shell command -v helm-docs 2>/dev/null),$(LOCALBIN)/helm-docs)
+
+## Tool Versions
+HELM_VERSION ?= v4.3.1
+KIND_VERSION ?= v0.33.0
+GOLANGCI_LINT_VERSION ?= v2.14.0
+
+.PHONY: helm-docs-binary-install
+helm-docs-binary-install: $(HELMDOCS) ## Install helm-docs binary.
+$(HELMDOCS): $(LOCALBIN) ## Download helm-docs locally if necessary.
+	test -s $(LOCALBIN)/helm-docs || GOBIN=$(LOCALBIN) go install github.com/norwoodj/helm-docs/cmd/helm-docs@latest
+
+.PHONY: golangci-lint-binary-install
+golangci-lint-binary-install: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
+$(GOLANGCI_LINT): $(LOCALBIN)
+	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+	@test -f .custom-gcl.yml && { \
+		echo "Building custom golangci-lint with plugins..." && \
+		$(GOLANGCI_LINT) custom --destination $(LOCALBIN) --name golangci-lint-custom && \
+		mv -f $(LOCALBIN)/golangci-lint-custom $(GOLANGCI_LINT); \
+	} || true
+
+.PHONY: kind-binary-install
+kind-binary-install: $(LOCALBIN) ## Download kind locally if it is not already installed.
+	@if [ -x "$(KIND)" ]; then \
+		echo "Using kind: $(KIND)"; \
+	else \
+		echo "Downloading sigs.k8s.io/kind/cmd/kind@$(KIND_VERSION)"; \
+		GOBIN=$(LOCALBIN) go install sigs.k8s.io/kind/cmd/kind@$(KIND_VERSION); \
+	fi
+
+.PHONY: helm-binary-install
+helm-binary-install: $(LOCALBIN) ## Download helm locally if it is not already installed.
+	@if [ -x "$(HELM)" ]; then \
+		echo "Using helm: $(HELM)"; \
+	else \
+		echo "Downloading helm"; \
+		GOBIN=$(LOCALBIN) go install helm.sh/helm/v4/cmd/helm@$(HELM_VERSION); \
+	fi
+
 ##@ E2E Tests
 .PHONY: kind-create-cluster
-kind-create-cluster: ## Create kind cluster for e2e tests
+kind-create-cluster: kind-binary-install ## Create kind cluster for e2e tests
 	if ! $(KIND) get clusters | grep -q 'e2e'; then \
 		$(KIND) create cluster --name e2e; \
 	else \
@@ -153,10 +180,10 @@ kind-create-cluster: ## Create kind cluster for e2e tests
 
 .PHONY: kind-load-image
 kind-load-image: ## Load plugin image into kind cluster
-	kind load docker-image $(IMG) --name e2e
+	$(KIND) load docker-image $(IMG) --name e2e
 
 .PHONY: kind-testing
-kind-testing: helm-replace docker-build kind-create-cluster kind-load-image  ## Run e2e tests
+kind-testing: helm-binary-install docker-build kind-binary-install kind-create-cluster kind-load-image  ## Run e2e tests
 	$(HELM) upgrade --install argocd argo-cd --namespace argocd --create-namespace --repo https://argoproj.github.io/argo-helm/ --wait
 	$(HELM) upgrade --install argocd-substitute-plugin --namespace argocd charts/argocd-appset-substitute-plugin/ --wait
 	$(KUBECTL) apply -f examples
@@ -167,7 +194,7 @@ kind-testing: helm-replace docker-build kind-create-cluster kind-load-image  ## 
 
 .PHONY: kind-delete-cluster
 kind-delete-cluster: ## Delete kind cluster after e2e tests
-	kind delete cluster --name e2e
+	$(KIND) delete cluster --name e2e
 
 .PHONY: verify-substitution
 verify-substitution: ## Verify that ConfigMap variables are substituted in the Application
@@ -185,6 +212,68 @@ verify-substitution: ## Verify that ConfigMap variables are substituted in the A
 		fi; \
 	done; \
 	echo "All ConfigMap and Secret variables are present in the Application."
+
+##@ Helm-docs Generate
+
+.PHONY: helm-docs-generate
+helm-docs-generate: helm-docs-binary-install ## Generate Charts README.md
+	$(HELMDOCS) --chart-search-root=charts --template-files=charts/_templates.gotmpl
+
+##@ Helm-Deployment
+## Namespace to deploy the Helm release
+HELM_NAMESPACE ?= argocd
+## Name of the Helm release
+HELM_RELEASE ?= argocd-substitute-plugin
+## Path to the Helm chart directory
+HELM_CHART_DIR ?= charts/argocd-appset-substitute-plugin
+## Additional arguments to pass to helm commands
+HELM_EXTRA_ARGS ?=
+
+.PHONY: argocd-install
+argocd-install: helm-binary-install  ## Run helm-template
+	@if ! $(KUBECTL) get ns argocd >/dev/null 2>&1; then \
+		echo "Installing Argo CD in namespace 'argocd'..."; \
+		$(HELM) -n argocd upgrade --install --create-namespace --repo https://argoproj.github.io/argo-helm argocd argo-cd; \
+	else \
+		echo "Argo CD is already installed in namespace 'argocd'."; \
+	fi
+
+.PHONY: helm-template
+helm-template: helm-binary-install helm-docs-binary-install helm-docs ## Run helm-template
+	${HELM} template argocd-substitute-plugin charts/argocd-appset-substitute-plugin -n argocd --debug
+
+.PHONY: helm-deploy
+helm-deploy: helm-binary-install argocd-install ## Install Helm chart in argocd namespace
+	${HELM} upgrade --install argocd-substitute-plugin charts/argocd-appset-substitute-plugin -n argocd \
+		--set controller.image.repository=$(REPOSITORY) \
+		--set controller.image.tag=v$(TAG) \
+		--wait
+
+.PHONY: helm-uninstall
+helm-uninstall: ## Uninstall the Helm release from the K8s cluster.
+	$(HELM) uninstall $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-status
+helm-status: ## Show Helm release status.
+	$(HELM) status $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-history
+helm-history: ## Show Helm release history.
+	$(HELM) history $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-rollback
+helm-rollback: ## Rollback to previous Helm release.
+	$(HELM) rollback $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
+
+##@ Production
+
+.PHONY: release
+release:   ## Release a new version of the controller.
+	@echo "Releasing version ${TAG} with image ${IMG}..."
+	TAG=v$(TAG) yq -i '.appVersion = strenv(TAG)' charts/argocd-appset-substitute-plugin/Chart.yaml
+	TAG=$(TAG) yq -i '.version = strenv(TAG)' charts/argocd-appset-substitute-plugin/Chart.yaml
+	TAG=v$(TAG) yq -i '.controller.image.tag = strenv(TAG)' charts/argocd-appset-substitute-plugin/values.yaml
+	$(MAKE) helm-docs-generate
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary (ideally with version)

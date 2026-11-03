@@ -1,0 +1,151 @@
+name: "Best Practices"
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  
+jobs:
+  vulnerability-scan:
+    name: Vulnerability Scan
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: write
+      actions: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+
+      - name: Run Anchore vulnerability scan
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        id: anchore-scan
+        continue-on-error: true
+        with:
+          path: "."
+          fail-build: false
+          severity-cutoff: "high"
+          only-fixed: true
+          output-format: "sarif"
+
+      - name: Upload scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        if: always()
+        with:
+          sarif_file: ${{ steps.anchore-scan.outputs.sarif }}
+      
+      - name: Post vulnerability scan results to PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #v9.0.0
+        with:
+          script: |
+            const fs = require('fs');
+            const sarifFile = '${{ steps.anchore-scan.outputs.sarif }}';
+            const repoName = '${{ github.repository }}';
+            let sarif;
+            try {
+              sarif = JSON.parse(fs.readFileSync(sarifFile, 'utf8'));
+            } catch (error) {
+              console.log('Error reading SARIF file:', error);
+              return;
+            }
+
+            const rules = sarif.runs[0]?.tool?.driver?.rules || [];
+            const results = sarif.runs[0]?.results || [];
+
+            if (results.length === 0) {
+              console.log('No vulnerabilities found.');
+              return;
+            }
+
+            const ruleMap = {};
+            for (const rule of rules) {
+              ruleMap[rule.id] = rule;
+            }
+
+            // Deduplicate by ruleId and extract structured info
+            const seen = new Set();
+            const vulns = [];
+
+            for (const result of results) {
+              if (seen.has(result.ruleId)) continue;
+              seen.add(result.ruleId);
+              const rule = ruleMap[result.ruleId] || {};
+              const score = parseFloat(rule.properties?.['security-severity'] || '0');
+              if (score < 7.0) continue; // Filter out low severity vulnerabilities
+              const desc = rule.shortDescription?.text || result.ruleId;
+              const fix = rule.help?.text || 'N/A';
+              const fixVersion = fix.match(/fixed in (.+?)[\s.]*$/i)?.[1] || fix.substring(0,80);
+              const label = score >= 9.0 ? 'Critical' : 'High';
+              vulns.push({score, label, desc, id: result.ruleId, fixVersion});
+            }
+            vulns.sort((a, b) => b.score - a.score);
+
+            const critical = vulns.filter(v => v.label === 'Critical');
+            const high = vulns.filter(v => v.label === 'High');
+
+            function buildTable(items) {
+              let t = '| Score | Package | Vulnerability | Fixed in |\n'
+              t += '|:-----:|---------|---------------|----------|\n';
+              for (const v of items) {
+                t += `| ${v.score} | ${v.id} | ${v.desc} | ${v.fixVersion} |\n`;
+              }
+              return t;
+            }
+
+            function buildSection(title, emoji, items) {
+              if (items.length === 0) return '';
+              return `<details>\n<summary>${emoji} <strong>${items.length} ${title}</strong></summary>\n\n` +
+                buildTable(items) + '\n</details>\n\n';
+            }
+
+            const marker = '<!-- anchore-scan-results -->';
+            const summary = [
+              critical.length > 0 ? `🔴 ${critical.length} critical` : null,
+              high.length > 0 ? `🟠 ${high.length} high` : null  
+            ].filter(Boolean).join(' . ');
+
+            const body = `${marker}\n### Vulnerability Scan Results\n\n` +
+              `**${vulns.length}** unique vulnerabilities found.\n\n` +
+              `> Only showing vulnerabilities with severity >= High.\n\n` +
+              buildSection('Critical Vulnerabilities', '🔴', critical) +
+              buildSection('High Vulnerabilities', '🟠', high) +
+              `Scan powered by [Anchore Grype](https://github.com/anchore/grype) Full results can be found in the [Security tab](https://github.com/${repoName}/security)`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body,
+              });
+            }
+
+      - name: Fail if vulnerabilities found
+        if: steps.anchore-scan.outcome == 'failure'
+        run: |
+          echo "Vulnerabilities found. Failing the job."
+          exit 1
+
+
+
+
+
+

@@ -1,0 +1,66 @@
+name: Release Tag
+
+on:
+  push:
+    paths-ignore:
+    - 'charts/**'
+    branches:
+    - master
+
+permissions:
+  contents: write
+  packages: write
+   
+jobs:
+  get-version:
+    name: Get version from VERSION file
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.read_version.outputs.VERSION }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+
+      - name: Read VERSION file
+        id: read_version
+        run: |
+          VERSION=$(cat VERSION)
+          echo "VERSION=v$VERSION" >> $GITHUB_OUTPUT
+
+  tag:
+    name: Create ${{ needs.get-version.outputs.VERSION }} tag
+    runs-on: ubuntu-latest
+    needs:
+      - get-version
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Set commit info
+        run: |
+          git config user.email "ci@github.com"
+          git config user.name "Tag-Releaser"
+          
+      - name: Tag repository
+        run: |
+          git tag -a ${{ needs.get-version.outputs.VERSION }} -m "Automated build tag"
+          git push --tags
+          sleep 5s
+
+  release:
+    name: Create ${{ needs.get-version.outputs.VERSION }} release
+    runs-on: ubuntu-latest
+    needs:
+      - get-version
+      - tag
+    continue-on-error: true
+
+    steps:
+      - name: Create release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          generate_release_notes: true
+          tag_name: ${{ needs.get-version.outputs.VERSION }}
+          prerelease: false
