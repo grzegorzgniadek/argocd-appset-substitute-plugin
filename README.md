@@ -1,7 +1,8 @@
 # argocd-appset-substitute-plugin
-[![Release Container](https://github.com/grzegorzgniadek/argocd-appset-substitute-plugin/actions/workflows/ci.yaml/badge.svg?branch=master)](https://github.com/grzegorzgniadek/argocd-appset-substitute-plugin/releases)
-[![App Version](https://img.shields.io/github/v/tag/grzegorzgniadek/argocd-appset-substitute-plugin?sort=semver&filter=v*&label=App%20Version&color=darkgreen)](https://github.com/grzegorzgniadek/argocd-appset-substitute-plugin/tags) [![Chart Version](https://img.shields.io/github/v/tag/grzegorzgniadek/argocd-appset-substitute-plugin?sort=semver&filter=argocd*&label=Chart%20Version&color=darkgreen)](https://github.com/grzegorzgniadek/argocd-appset-substitute-plugin/tags) 
-[![Go report card](https://goreportcard.com/badge/github.com/grzegorzgniadek/argocd-appset-substitute-plugin)](https://goreportcard.com/report/github.com/grzegorzgniadek/argocd-appset-substitute-plugin) [![Apache 2.0 license](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/license/apache-2-0)
+[![Release Container](https://github.com/grzegorzgniadek/argocd-appset-substitute-plugin/actions/workflows/release-container.yaml/badge.svg?branch=master)](https://github.com/grzegorzgniadek/argocd-appset-substitute-plugin/releases)
+[![Release Charts](https://github.com/grzegorzgniadek/argocd-appset-substitute-plugin/actions/workflows/release-charts.yaml/badge.svg?branch=master)](https://github.com/grzegorzgniadek/argocd-appset-substitute-plugin/releases)
+[![Version](https://img.shields.io/github/v/tag/grzegorzgniadek/argocd-appset-substitute-plugin?sort=semver&label=Version&color=darkgreen)](https://github.com/grzegorzgniadek/argocd-appset-substitute-plugin/tags)
+[![Apache 2.0 license](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/license/apache-2-0)
 
 ArgoCD plugin for variable substitution in ApplicationSet
 
@@ -16,7 +17,7 @@ When Custom resource is created, controller takes secret keys and values and cre
 
 ## Architecture and components
 
-- a `Deployment` to run interpolator's controller,
+- a `Deployment` to run argocd-appset-substitute-plugin controller,
 
 ```bash
 $ kubectl top pods
