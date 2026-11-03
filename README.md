@@ -17,7 +17,7 @@ When Custom resource is created, controller takes secret keys and values and cre
 
 ## Architecture and components
 
-- a `Deployment` to run interpolator's controller,
+- a `Deployment` to run argocd-appset-substitute-plugin controller,
 
 ```bash
 $ kubectl top pods
