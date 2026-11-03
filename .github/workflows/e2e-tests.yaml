@@ -34,4 +34,4 @@ jobs:
         run: kind version
 
       - name: Test E2E
-        run: make test-e2e-helm  
+        run: make kind-testing
