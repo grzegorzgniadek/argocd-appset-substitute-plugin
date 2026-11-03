@@ -49,5 +49,5 @@ jobs:
           file: Dockerfile
           push: true
           build-args: |
-            VERSION=${{ env.VERSION }}
-          tags: ${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+            VERSION=v${{ env.VERSION }}
+          tags: ${{ env.IMAGE_NAME }}:v${{ env.VERSION }}
